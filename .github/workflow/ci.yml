@@ -1,0 +1,32 @@
+name: ci
+
+on:
+  - push
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  self_job:
+    name: Run local hpc-codecov-action
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: hpc-codecov-action step
+        uses: ./
+        id: hca
+        with:
+          build-tool: 'stack'
+          build-tool-arg: '--resolver=lts-17'
+
+      - name: Get the output
+        run: echo "output: ${{ steps.hca.outputs.path }}"
