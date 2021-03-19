@@ -1,0 +1,26 @@
+{
+  "name": "hpc-codecov-action",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "spago bundle-app -t output/index.js",
+    "watch": "spago build --watch",
+    "test": "spago test",
+    "ncc": "ncc build output/index.js",
+    "uglify": "uglifyjs --toplevel -m -c -o dist/main.js dist/index.js",
+    "all": "yarn build && yarn ncc && yarn uglify",
+    "clean": "rm -rf output dist"
+  },
+  "dependencies": {
+    "@actions/core": "^1.2.6",
+    "@actions/exec": "^1.0.4",
+    "@actions/io": "^1.0.2"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.27.0",
+    "purescript": "^0.14.0",
+    "spago": "^0.19.1",
+    "uglify-js": "^3.13.1"
+  }
+}

@@ -1,0 +1,17 @@
+name: "hpc-codecov-action"
+description: "Generate Codecov report for Haskell project"
+inputs:
+  build-tool:
+    description: "Build tool to use, 'stack' or 'cabal'"
+    required: true
+    default: "stack"
+  build-tool-args:
+    description: "Arguments passed to the `build-tool`"
+    required: false
+    default: ""
+outputs:
+  path:
+    description: "Path of coverage report"
+runs:
+  using: "node12"
+  main: "dist/main.js"
