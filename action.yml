@@ -1,17 +1,47 @@
 name: "hpc-codecov-action"
+
 description: "Generate Codecov report for Haskell project"
+
 inputs:
   build-tool:
-    description: "Build tool to use, 'stack' or 'cabal'"
+    description: "Build tool to use, 'stack' or 'cabal-install'"
     required: true
-    default: "stack"
+    default: stack
+
   build-tool-args:
     description: "Arguments passed to the `build-tool`"
     required: false
     default: ""
+
+  project-root:
+    description: |
+      Project root directory, typically the directory containing
+      "stack.yaml" or "cabal.project".
+    required: false
+    default: "."
+
+  verbose:
+    description: "Show verbose output"
+    required: false
+    default: true
+
+  test-suite:
+    description: |
+      Name of the test suite to look for .tix file. Use 'all' to get
+      unified coverage when running with 'stack'.
+    required: true
+
+  out:
+    description: "Output path to write the report"
+    required: false
+    default: ./codecov.json
+
 outputs:
-  path:
-    description: "Path of coverage report"
+  exe:
+    description: "Path of hpc-codecov executable"
+  report:
+    description: "Path of generated coverage report JSON file"
+
 runs:
   using: "node12"
   main: "dist/main.js"

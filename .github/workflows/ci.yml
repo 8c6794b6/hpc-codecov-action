@@ -8,8 +8,8 @@ defaults:
     shell: bash
 
 jobs:
-  self_job:
-    name: Run local hpc-codecov-action
+  using-self:
+    name: Run hpc-codecov-action
     strategy:
       matrix:
         os:
@@ -21,12 +21,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: hpc-codecov-action step
+      # Building the sample project before running "yarn test", to
+      # avoid timeout.
+      - name: Build and test sample project with stack
+        run: |
+          stack --stack-yaml=hs/project1/stack.yaml --skip-msys \
+            build --fast --test --coverage
+
+      - name: Build with yarn
+        run: yarn && yarn clean && yarn dist
+
+      - name: Run tests
+        run: yarn test
+
+      - name: Generate coverage report of project1
         uses: ./
-        id: hca
+        id: project1
         with:
           build-tool: 'stack'
-          build-tool-arg: '--resolver=lts-17'
+          build-tool-args: '--skip-msys'
+          project-root: 'hs/project1'
+          test-suite: 'project1-test'
 
-      - name: Get the output
-        run: echo "output: ${{ steps.hca.outputs.path }}"
+      - name: Show outputs of project1
+        run: |
+          echo "outputs.exe: ${{ steps.project1.outputs.exe }}"
+          echo "outputs.report: ${{ steps.project1.outputs.report }}"

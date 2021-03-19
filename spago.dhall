@@ -8,6 +8,9 @@ You can edit this file as you like.
   , "effect"
   , "github-actions-toolkit"
   , "node-fs"
+  , "node-fs-aff"
+  , "node-path"
+  , "node-process"
   , "psci-support"
   , "spec"
   ]

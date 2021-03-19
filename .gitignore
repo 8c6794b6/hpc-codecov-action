@@ -9,4 +9,12 @@
 /.psa*
 /.spago
 
+yarn-error.log
+dist/index.js
+
+.stack-work
+stack.yaml.lock
+
+codecov.json
+
 *~

@@ -9,7 +9,7 @@
     "test": "spago test",
     "ncc": "ncc build output/index.js",
     "uglify": "uglifyjs --toplevel -m -c -o dist/main.js dist/index.js",
-    "all": "yarn build && yarn ncc && yarn uglify",
+    "dist": "yarn build && yarn ncc && yarn uglify",
     "clean": "rm -rf output dist"
   },
   "dependencies": {
