@@ -11,8 +11,14 @@ import Effect.Class (class MonadEffect, liftEffect)
 -- aff
 import Effect.Aff (Aff, runAff_)
 
+-- array
+import Data.Array as Array
+
 -- console
 -- import Effect.Console (log)
+
+-- control
+import Control.Alternative (guard)
 
 -- either
 import Data.Either (Either(..))
@@ -50,7 +56,7 @@ import Effect.Ref (Ref)
 import Effect.Ref as Ref
 
 -- strings
-import Data.String (trim)
+import Data.String (Pattern(..), trim, contains, split)
 
 -- transformers
 import Control.Monad.Except (ExceptT, runExceptT, throwError, lift)
@@ -121,13 +127,24 @@ workWith mb_hpc_codecov inputs = do
 -- | Purescript representation of input information specified in
 -- @action.yml@.
 type Inputs =
-  { build_tool :: String
+  { build_tool :: BuildTool
   , build_tool_args :: String
   , verbose :: Boolean
   , test_suite :: String
   , project_root :: String
+  , excludes :: Array String
   , out :: String
   }
+
+data BuildTool
+  = CabalInstall
+  | Stack
+
+derive instance eqBT :: Eq BuildTool
+
+instance showBuildTool :: Show BuildTool where
+  show CabalInstall = "cabal-install"
+  show Stack = "stack"
 
 -- | Purescript representation of output information specified in
 -- @action.yml@.
@@ -144,28 +161,47 @@ getInputs = do
   let opt name = Core.getInput {name: name, options: Nothing}
       req name = Core.getInput {name: name, options: Just {required: true}}
 
-  build_tool <- req "build-tool"
+  build_tool <- getBuildTool
   build_tool_args <- opt "build-tool-args"
   out <- opt "out"
-  verbose_str <- opt "verbose"
-  verbose <- case verbose_str of
-    "true" -> pure true
-    "false" -> pure false
-    _ -> do
-      liftEffect $ Core.warning $
-        "expecting 'true' or 'false' for input 'verbose', but got " <>
-        show verbose_str <> ", setting verbosity to 'true'."
-      pure true
+  verbose <- getVerbose
   test_suite <- req "test-suite"
   project_root <- opt "project-root"
+  excludes <- getExcludes
 
   pure { build_tool: build_tool
        , build_tool_args: build_tool_args
        , verbose: verbose
        , test_suite: test_suite
        , project_root: project_root
+       , excludes: excludes
        , out: out
        }
+
+getBuildTool :: ExceptT Error Effect BuildTool
+getBuildTool = do
+  str <- Core.getInput {name: "build-tool", options: Just {required: true}}
+  case str of
+    "cabal" -> pure CabalInstall
+    "stack" -> pure Stack
+    _       -> throwError $ error $ "Unknown build-tool: " <> str
+
+getVerbose :: ExceptT Error Effect Boolean
+getVerbose = do
+  str <- Core.getInput {name: "verbose", options: Nothing}
+  case str of
+    "true"  -> pure true
+    "false" -> pure false
+    _       -> do
+      liftEffect $ Core.warning $
+        "expecting 'true' or 'false' for input 'verbose', but got " <>
+        show str <> ", setting verbosity to 'true'."
+      pure true
+
+getExcludes :: ExceptT Error Effect (Array String)
+getExcludes = do
+  str <- Core.getInput {name: "excludes", options: Nothing}
+  pure $ split (Pattern ",") str
 
 -- | Set github action @outputs@ on success, or set the action as failed
 -- with error message on failure.
@@ -233,16 +269,16 @@ getHpcCodecov = do
                   , args: Just ["-sL", "--output", meta.exe, meta.url]
                   , options: Nothing }
 
-  if ec == 0.0
-     then do
-       path <- liftEffect $ do
-         resolved <- resolve [] meta.exe
-         Core.info ("Saved hpc-codecov to: " <> resolved)
-         pure resolved
-       lift $ chmod path (mkPerms all (read + execute) (read + execute))
-       pure path
-    else
+  if ec /= 0.0
+    then
       throwError $ error $ "Downloading hpc-codecov failed with " <> show ec
+    else do
+      path <- liftEffect $ do
+        resolved <- resolve [] meta.exe
+        Core.info ("Saved hpc-codecov to: " <> resolved)
+        pure resolved
+      lift $ chmod path (mkPerms all (read + execute) (read + execute))
+      pure path
 
 
 -- ------------------------------------------------------------------------
@@ -255,13 +291,12 @@ getHpcCodecov = do
 getHpcCodecovArgs :: Inputs -> Action (Array String)
 getHpcCodecovArgs inputs =
   case inputs.build_tool of
-    "stack" -> getArgsForStack inputs
-    "cabal-install" -> getArgsForCabalInstall inputs
-    other -> throwError (error ("unknown build tool: " <> other))
+    Stack        -> getArgsForStack inputs
+    CabalInstall -> getArgsForCabalInstall inputs
 
 getArgsForStack :: Inputs -> Action (Array String)
 getArgsForStack inputs = do
-  -- 'Ref String' to hold output string from stack command.
+  -- 'Ref String' to hold output from stack command.
   ref <- newRef ""
 
   let stack_cmd = case inputs.build_tool_args of
@@ -278,26 +313,57 @@ getArgsForStack inputs = do
                          , args: Just args
                          , options: Just options }
         readRef ref
-      tix_file = inputs.test_suite <> ".tix"
+      tix_name = inputs.test_suite <> ".tix"
 
   dist_dir <- stack ["path", "--dist-dir"]
 
   local_hpc_root <- stack ["path", "--local-hpc-root"]
-  mb_tix <- findFileUnder (trim local_hpc_root) tix_file
+  mb_tix <- findFileUnder (trim local_hpc_root) tix_name
   tix <- case mb_tix of
     Just t -> pure t
-    Nothing -> throwError $ error ("cannot find tix: " <> inputs.test_suite)
+    Nothing -> throwError $ error ("cannot find tix: " <> tix_name)
 
   resolved_out <- liftEffect $ resolve [inputs.project_root] inputs.out
 
-  pure [ "--verbose"
-       , "--mix", trim dist_dir <> "/hpc"
-       , "--out", resolved_out
-       , tix ]
+  pure $
+    verboseArg inputs <>
+    Array.concatMap (\m -> ["-x", m]) inputs.excludes <>
+    [ "--mix", trim dist_dir <> "/hpc"
+    , "--out", resolved_out
+    , tix ]
 
 getArgsForCabalInstall :: Inputs -> Action (Array String)
-getArgsForCabalInstall _ = throwError (error "Not Yet Implemented")
+getArgsForCabalInstall inputs = do
+  let distdir_name = "dist-newstyle"
+  distdir <- liftEffect $ resolve [inputs.project_root] distdir_name
 
+  let tix_name = inputs.test_suite <> ".tix"
+  mb_tix <- findFileUnder distdir tix_name
+  tix <- case mb_tix of
+    Just t -> pure t
+    Nothing -> throwError $ error ("cannot find tix: " <> tix_name)
+
+  mixdirs <- findDirsUnder distdir "mix"
+  let isVanilla = contains (Pattern "vanilla")
+  vanilla_mix <- case Array.find isVanilla mixdirs of
+    Just v -> pure v
+    _ -> throwError $ error ("cannot find vanilla mix dir")
+  vanilla_contents <- lift $ readdir vanilla_mix
+  mix_args <- liftEffect $ traverse (resolve [vanilla_mix]) vanilla_contents
+
+  resolved_out <- liftEffect $ resolve [inputs.project_root] inputs.out
+
+  pure $
+    verboseArg inputs <>
+    Array.concatMap (\m -> ["-x", m]) inputs.excludes <>
+    Array.concatMap (\d -> ["--mix", d]) mix_args <>
+    [ "--out", resolved_out
+    , tix ]
+
+verboseArg :: Inputs -> Array String
+verboseArg inputs = do
+  guard inputs.verbose
+  pure "--verbose"
 
 -- ------------------------------------------------------------------------
 --
@@ -307,7 +373,7 @@ getArgsForCabalInstall _ = throwError (error "Not Yet Implemented")
 
 -- | Find file under given directory.
 findFileUnder
-  :: String -- ^ Directory to search
+  :: String -- ^ Directory searched under.
   -> String -- ^ File name to look for.
   -> Action (Maybe String)
 findFileUnder dir0 file = go Nothing dir0
@@ -315,7 +381,7 @@ findFileUnder dir0 file = go Nothing dir0
     go :: Maybe String -> String -> Action (Maybe String)
     go mb_found dir =
       case mb_found of
-        Just found -> pure (Just found)
+        Just _ -> pure mb_found
         Nothing -> do
           s <- lift $ stat dir
           if isDirectory s
@@ -329,6 +395,27 @@ findFileUnder dir0 file = go Nothing dir0
                    files' <- liftEffect $ traverse (resolve [dir]) files
                    foldM go Nothing files'
              else pure Nothing
+
+findDirsUnder :: String -> String -> Action (Array String)
+findDirsUnder dir0 target = go [] dir0
+  where
+    go :: Array String -> String -> Action (Array String)
+    go founds dir = do
+      s <- lift $ stat dir
+      if not $ isDirectory s
+        then pure founds
+        else do
+          resolved <- liftEffect $ resolve [dir] target
+          does_exist <- lift $ exists resolved
+
+          -- XXX: Slow, appending with Array ...
+          let founds' = if does_exist
+                          then [resolved] <> founds
+                          else founds
+
+          contents <- lift $ readdir dir
+          contents' <- liftEffect $ traverse (resolve [dir]) contents
+          foldM go founds' contents'
 
 newRef :: forall m a. MonadEffect m => a -> m (Ref a)
 newRef = liftEffect <<< Ref.new

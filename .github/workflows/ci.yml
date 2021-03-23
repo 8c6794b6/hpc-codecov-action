@@ -8,8 +8,8 @@ defaults:
     shell: bash
 
 jobs:
-  using-self:
-    name: Run hpc-codecov-action
+  run-self:
+    name: Build, test, and run self
     strategy:
       matrix:
         os:
@@ -21,12 +21,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Building the sample project before running "yarn test", to
+      # Building the sample projects before running "yarn test", to
       # avoid timeout.
+
       - name: Build and test sample project with stack
         run: |
           stack --stack-yaml=hs/project1/stack.yaml --skip-msys \
             build --fast --test --coverage
+
+      - name: Build and test sample project with cabal-install
+        run: |
+          ( cd hs/project1 && cabal test --enable-coverage )
 
       - name: Build with yarn
         run: yarn && yarn clean && yarn dist
@@ -34,16 +39,32 @@ jobs:
       - name: Run tests
         run: yarn test
 
-      - name: Generate coverage report of project1
+      - name: Generate coverage report of project1 with stack
         uses: ./
-        id: project1
+        id: p1-stack
         with:
           build-tool: 'stack'
           build-tool-args: '--skip-msys'
           project-root: 'hs/project1'
           test-suite: 'project1-test'
+          out: 'p1-stack.json'
 
-      - name: Show outputs of project1
+      - name: Show outputs of p1-stack
         run: |
-          echo "outputs.exe: ${{ steps.project1.outputs.exe }}"
-          echo "outputs.report: ${{ steps.project1.outputs.report }}"
+          echo "outputs.exe: ${{ steps.p1-stack.outputs.exe }}"
+          echo "outputs.report: ${{ steps.p1-stack.outputs.report }}"
+
+      - name: Generate coverage report of project1 with cabal
+        uses: ./
+        id: p1-cabal
+        with:
+          build-tool: 'cabal'
+          project-root: 'hs/project1'
+          test-suite: 'project1-test'
+          excludes: 'Main,Paths_project1'
+          out: 'p1-cabal.json'
+
+      - name: Show outputs of p1-cabal
+        run: |
+          echo "outputs.exe: ${{ steps.p1-cabal.outputs.exe }}"
+          echo "outputs.report: ${{ steps.p1-cabal.outputs.report }}"

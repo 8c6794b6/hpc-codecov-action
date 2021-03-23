@@ -15,6 +15,8 @@ dist/index.js
 .stack-work
 stack.yaml.lock
 
-codecov.json
+dist-newstyle
+
+codecov*.json
 
 *~

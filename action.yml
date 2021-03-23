@@ -31,6 +31,13 @@ inputs:
       unified coverage when running with 'stack'.
     required: true
 
+  excludes:
+    description: |
+      Comma separated module names to exclude from coverage report.
+      E.g.: "Main,Paths_project1,Foo,Bar"
+    required: false
+    default: ""
+
   out:
     description: "Output path to write the report"
     required: false
