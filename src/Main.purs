@@ -1,4 +1,5 @@
--- GitHub action to generate codecov report with hpc-codecov
+-- | GitHub action to generate Codecov test coverage report of
+-- | cabalized Haskell package with `hpc-codecov`.
 
 module Main where
 
@@ -6,16 +7,13 @@ import Prelude
 
 -- effect
 import Effect (Effect)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (liftEffect)
 
 -- aff
 import Effect.Aff (Aff, runAff_)
 
 -- array
 import Data.Array as Array
-
--- console
--- import Effect.Console (log)
 
 -- control
 import Control.Alternative (guard)
@@ -52,14 +50,13 @@ import Node.Platform (Platform(..))
 import Node.Process (platform)
 
 -- refs
-import Effect.Ref (Ref)
 import Effect.Ref as Ref
 
 -- strings
 import Data.String (Pattern(..), trim, contains, split)
 
 -- transformers
-import Control.Monad.Except (ExceptT, runExceptT, throwError, lift)
+import Control.Monad.Except (ExceptT, except, runExceptT, throwError, lift)
 
 -- github-actions-toolkit
 import GitHub.Actions.Core as Core
@@ -73,49 +70,58 @@ import GitHub.Actions.Exec as Exec
 -- ------------------------------------------------------------------------
 
 main :: Effect Unit
-main = do
-  et_inputs <- runExceptT getInputs
-  case et_inputs of
-    Right inputs -> runAff_ setOutputs (work inputs)
-    Left err     -> Core.setFailed (message err)
+main = flip runAff_ mainAff $ \et_done ->
+  case et_done of
+    Right _ -> pure unit
+    Left err -> Core.setFailed $ message err
+
+mainAff :: Aff Unit
+mainAff = runAction work
 
 
 -- ------------------------------------------------------------------------
 --
--- Internals
+-- Internal work
 --
 -- ------------------------------------------------------------------------
+
+type Action a = ExceptT Error Aff a
+
+runAction :: forall a. Action a -> Aff a
+runAction act = do
+  et_ret <- runExceptT act
+  case et_ret of
+    Right ret -> pure ret
+    Left err -> throwError err
 
 -- | The guts.
-work :: Inputs -> Aff Outputs
-work = workWith Nothing
+work :: Action Unit
+work = getInputs >>= doWork >>= setOutputs
 
 -- | The guts of guts.
-workWith
+doWork :: Inputs -> Action Outputs
+doWork = doWorkWith Nothing
+
+-- | The guts of guts of guts.
+doWorkWith
   :: Maybe String
-  -- ^ 'Just' path to @hpc-codecov@, or 'Nothing' to download from
+  -- ^ 'Just' path to `hpc-codecov`, or 'Nothing' to download from
   -- latest release.
   -> Inputs
   -- ^ Input paramater object.
-  -> Aff Outputs
+  -> Action Outputs
   -- ^ Output object of this action.
-workWith mb_hpc_codecov inputs = do
-  et_outputs <- runAction do
-    hpc_codecov <- case mb_hpc_codecov of
-      Just path -> pure path
-      Nothing -> getHpcCodecov
-    hpc_codecov_args <- getHpcCodecovArgs inputs
-    let options = Exec.defaultExecOptions {cwd = Just inputs.project_root}
-    _ec <- Exec.exec { command: hpc_codecov
-                     , args: Just hpc_codecov_args
-                     , options: Just options }
-    report <- liftEffect $ resolve [inputs.project_root] inputs.out
-    pure { exe: hpc_codecov
-         , report: report }
-
-  case et_outputs of
-    Right outputs -> pure outputs
-    Left err -> throwError err
+doWorkWith mb_hpc_codecov inputs = do
+  hpc_codecov <- case mb_hpc_codecov of
+    Just path -> pure path
+    Nothing -> getHpcCodecov
+  hpc_codecov_args <- getHpcCodecovArgs inputs
+  let options = Exec.defaultExecOptions {cwd = Just inputs.project_root}
+  exec { command: hpc_codecov
+       , args: Just hpc_codecov_args
+       , options: Just options }
+  report <- liftEffect $ resolve [inputs.project_root] inputs.out
+  pure {exe: hpc_codecov, report: report}
 
 
 -- ------------------------------------------------------------------------
@@ -125,7 +131,7 @@ workWith mb_hpc_codecov inputs = do
 -- ------------------------------------------------------------------------
 
 -- | Purescript representation of input information specified in
--- @action.yml@.
+-- | `action.yml`.
 type Inputs =
   { build_tool :: BuildTool
   , build_tool_args :: String
@@ -140,47 +146,43 @@ data BuildTool
   = CabalInstall
   | Stack
 
-derive instance eqBT :: Eq BuildTool
-
 instance showBuildTool :: Show BuildTool where
-  show CabalInstall = "cabal-install"
+  show CabalInstall = "cabal"
   show Stack = "stack"
 
 -- | Purescript representation of output information specified in
--- @action.yml@.
+-- | `action.yml`.
 type Outputs =
   { exe :: String
-    -- ^ Absolute path to the @hpc-codecov@ executable.
   , report :: String
-    -- ^ Absolute path to the generated coverage report JSON file.
   }
 
--- | Get github action @inputs@ specified in @action.yml@.
-getInputs :: ExceptT Error Effect Inputs
-getInputs = do
-  let opt name = Core.getInput {name: name, options: Nothing}
-      req name = Core.getInput {name: name, options: Just {required: true}}
+-- | Get github action inputs specified in `action.yml`.
+-- getInputs :: ExceptT Error Effect Inputs
+getInputs :: Action Inputs
+getInputs = liftEffect (runExceptT go) >>= except
+  where
+    go = do
+      build_tool <- getBuildTool
+      build_tool_args <- optionalInput "build-tool-args"
+      out <- optionalInput "out"
+      verbose <- getVerbose
+      test_suite <- requiredInput "test-suite"
+      project_root <- optionalInput "project-root"
+      excludes <- getExcludes
 
-  build_tool <- getBuildTool
-  build_tool_args <- opt "build-tool-args"
-  out <- opt "out"
-  verbose <- getVerbose
-  test_suite <- req "test-suite"
-  project_root <- opt "project-root"
-  excludes <- getExcludes
-
-  pure { build_tool: build_tool
-       , build_tool_args: build_tool_args
-       , verbose: verbose
-       , test_suite: test_suite
-       , project_root: project_root
-       , excludes: excludes
-       , out: out
-       }
+      pure { build_tool: build_tool
+           , build_tool_args: build_tool_args
+           , verbose: verbose
+           , test_suite: test_suite
+           , project_root: project_root
+           , excludes: excludes
+           , out: out
+           }
 
 getBuildTool :: ExceptT Error Effect BuildTool
 getBuildTool = do
-  str <- Core.getInput {name: "build-tool", options: Just {required: true}}
+  str <- requiredInput "build-tool"
   case str of
     "cabal" -> pure CabalInstall
     "stack" -> pure Stack
@@ -188,7 +190,7 @@ getBuildTool = do
 
 getVerbose :: ExceptT Error Effect Boolean
 getVerbose = do
-  str <- Core.getInput {name: "verbose", options: Nothing}
+  str <- optionalInput "verbose"
   case str of
     "true"  -> pure true
     "false" -> pure false
@@ -200,29 +202,21 @@ getVerbose = do
 
 getExcludes :: ExceptT Error Effect (Array String)
 getExcludes = do
-  str <- Core.getInput {name: "excludes", options: Nothing}
+  str <- optionalInput "excludes"
   pure $ split (Pattern ",") str
 
--- | Set github action @outputs@ on success, or set the action as failed
--- with error message on failure.
-setOutputs :: Either Error Outputs -> Effect Unit
-setOutputs et_outputs = case et_outputs of
-  Right outputs -> do
-    Core.setOutput { name: "exe", value: outputs.exe }
-    Core.setOutput { name: "report", value: outputs.report }
-  Left err     -> Core.setFailed (message err)
+optionalInput :: String -> ExceptT Error Effect String
+optionalInput n = Core.getInput {name: n, options: Nothing}
 
+requiredInput :: String -> ExceptT Error Effect String
+requiredInput n = Core.getInput {name: n, options: Just {required: true}}
 
--- ------------------------------------------------------------------------
---
--- Internal worker type
---
--- ------------------------------------------------------------------------
-
-type Action a = ExceptT Error Aff a
-
-runAction :: forall a. Action a -> Aff (Either Error a)
-runAction = runExceptT
+-- | Set github action outputs on success, or set the action as failed
+-- | with error message on failure.
+setOutputs :: Outputs -> Action Unit
+setOutputs outputs = liftEffect do
+  Core.setOutput { name: "exe", value: outputs.exe }
+  Core.setOutput { name: "report", value: outputs.report }
 
 
 -- ------------------------------------------------------------------------
@@ -231,7 +225,7 @@ runAction = runExceptT
 --
 -- ------------------------------------------------------------------------
 
--- | Meta information to get @hpc-codecov@ executable binary.
+-- | Meta information to download and save `hpc-codecov` executable binary.
 type HpcCodecovMeta =
   { url :: String
     -- ^ URL to download the binary executable.
@@ -239,15 +233,15 @@ type HpcCodecovMeta =
     -- ^ Local executable path.
   }
 
--- | Make URL to download @hpc-codecov@.
+-- | Make a URL to download `hpc-codecov`.
 mkURL :: String -> String
 mkURL name =
   "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.2.0.2-rc5/"
   <> name
 
--- | Get meta information to get @hpc-codecov@ executable for
--- supported platforms. This action will fail on unsupported
--- platforms, e.g. AIX, Android ... etc.
+-- | Get meta information to download `hpc-codecov` executable for
+-- | supported platforms. This action will fail on unsupported
+-- | platforms, e.g. AIX, Android ... etc.
 getHpcCodecovMeta :: Action HpcCodecovMeta
 getHpcCodecovMeta = do
   case platform of
@@ -257,28 +251,24 @@ getHpcCodecovMeta = do
       pure {url: mkURL "hpc-codecov-macOS", exe: "hpc-codecov"}
     Just Win32 ->
       pure {url: mkURL "hpc-codecov-Windows.exe", exe: "hpc-codecov.exe"}
-    _ -> throwError (error "Unsupported platform")
+    _ ->
+      throwError $ error $ "Unsupported platform: " <> show platform
 
--- | Download @hpc-codecov@ executable. Internally uses @curl@ to
--- simplify following redirect of the download URL.  Returns the
--- absolute path of the @hpc-codecov@ executable.
+-- | Download `hpc-codecov` executable. Internally uses `curl` to
+-- | simplify following redirect of the download URL.  Returns the
+-- | absolute path of the `hpc-codecov` executable.
 getHpcCodecov :: Action String
 getHpcCodecov = do
   meta <- getHpcCodecovMeta
-  ec <- Exec.exec { command: "curl"
-                  , args: Just ["-sL", "--output", meta.exe, meta.url]
-                  , options: Nothing }
-
-  if ec /= 0.0
-    then
-      throwError $ error $ "Downloading hpc-codecov failed with " <> show ec
-    else do
-      path <- liftEffect $ do
-        resolved <- resolve [] meta.exe
-        Core.info ("Saved hpc-codecov to: " <> resolved)
-        pure resolved
-      lift $ chmod path (mkPerms all (read + execute) (read + execute))
-      pure path
+  exec { command: "curl"
+       , args: Just ["-sL", "--output", meta.exe, meta.url]
+       , options: Nothing }
+  path <- liftEffect do
+    resolved <- resolve [] meta.exe
+    Core.info ("Saved hpc-codecov to: " <> resolved)
+    pure resolved
+  lift $ chmod path (mkPerms all (read + execute) (read + execute))
+  pure path
 
 
 -- ------------------------------------------------------------------------
@@ -287,7 +277,7 @@ getHpcCodecov = do
 --
 -- ------------------------------------------------------------------------
 
--- | Get arguments passed to @hpc-codecov@.
+-- | Get arguments passed to `hpc-codecov`.
 getHpcCodecovArgs :: Inputs -> Action (Array String)
 getHpcCodecovArgs inputs =
   case inputs.build_tool of
@@ -296,6 +286,10 @@ getHpcCodecovArgs inputs =
 
 getArgsForStack :: Inputs -> Action (Array String)
 getArgsForStack inputs = do
+  let newRef = liftEffect <<< Ref.new
+      readRef = liftEffect <<< Ref.read
+      writeRef ref = liftEffect <<< flip Ref.write ref
+
   -- 'Ref String' to hold output from stack command.
   ref <- newRef ""
 
@@ -309,9 +303,9 @@ getArgsForStack inputs = do
         Exec.defaultExecListeners {stdout = Just stdout_to_ref}
       stdout_to_ref buf = toString UTF8 buf >>= writeRef ref
       stack args = do
-        _ec <- Exec.exec { command: stack_cmd
-                         , args: Just args
-                         , options: Just options }
+        exec { command: stack_cmd
+             , args: Just args
+             , options: Just options }
         readRef ref
       tix_name = inputs.test_suite <> ".tix"
 
@@ -327,10 +321,9 @@ getArgsForStack inputs = do
 
   pure $
     verboseArg inputs <>
-    Array.concatMap (\m -> ["-x", m]) inputs.excludes <>
+    excludeArgs inputs <>
     [ "--mix", trim dist_dir <> "/hpc"
-    , "--out", resolved_out
-    , tix ]
+    , "--out", resolved_out, tix ]
 
 getArgsForCabalInstall :: Inputs -> Action (Array String)
 getArgsForCabalInstall inputs = do
@@ -355,21 +348,29 @@ getArgsForCabalInstall inputs = do
 
   pure $
     verboseArg inputs <>
-    Array.concatMap (\m -> ["-x", m]) inputs.excludes <>
+    excludeArgs inputs <>
     Array.concatMap (\d -> ["--mix", d]) mix_args <>
-    [ "--out", resolved_out
-    , tix ]
+    [ "--out", resolved_out, tix ]
 
 verboseArg :: Inputs -> Array String
-verboseArg inputs = do
-  guard inputs.verbose
-  pure "--verbose"
+verboseArg inputs = guard inputs.verbose *> pure "--verbose"
+
+excludeArgs :: Inputs -> Array String
+excludeArgs inputs = Array.concatMap (\m -> ["-x", m]) inputs.excludes
+
 
 -- ------------------------------------------------------------------------
 --
 -- Auxliary
 --
 -- ------------------------------------------------------------------------
+
+-- | Execute and assert execution of external command.
+exec :: Exec.ExecArgs -> Action Unit
+exec args = do
+  ec <- Exec.exec args
+  when (ec /= 0.0) $
+    throwError $ error $ "Got non zero exit code: " <> show ec
 
 -- | Find file under given directory.
 findFileUnder
@@ -396,7 +397,11 @@ findFileUnder dir0 file = go Nothing dir0
                    foldM go Nothing files'
              else pure Nothing
 
-findDirsUnder :: String -> String -> Action (Array String)
+-- | Find directory under given directory.
+findDirsUnder
+  :: String -- ^ Directory searched under.
+  -> String -- ^ Directory name to look for
+  -> Action (Array String)
 findDirsUnder dir0 target = go [] dir0
   where
     go :: Array String -> String -> Action (Array String)
@@ -416,12 +421,3 @@ findDirsUnder dir0 target = go [] dir0
           contents <- lift $ readdir dir
           contents' <- liftEffect $ traverse (resolve [dir]) contents
           foldM go founds' contents'
-
-newRef :: forall m a. MonadEffect m => a -> m (Ref a)
-newRef = liftEffect <<< Ref.new
-
-readRef :: forall m a. MonadEffect m => Ref a -> m a
-readRef = liftEffect <<< Ref.read
-
-writeRef :: forall m a. MonadEffect m => Ref a -> a -> m Unit
-writeRef ref = liftEffect <<< flip Ref.write ref

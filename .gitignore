@@ -11,6 +11,10 @@
 
 yarn-error.log
 dist/index.js
+dist/*.js.map
+dist/sourcemap-register.js
+coverage
+.nyc_output
 
 .stack-work
 stack.yaml.lock

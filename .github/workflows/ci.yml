@@ -36,8 +36,11 @@ jobs:
       - name: Build with yarn
         run: yarn && yarn clean && yarn dist
 
-      - name: Run tests
-        run: yarn test
+      - name: Run tests with coverage
+        run: yarn coverage
+
+      - name: Send coverage report
+        run: bash <(curl -s https://codecov.io/bash)
 
       - name: Generate coverage report of project1 with stack
         uses: ./
