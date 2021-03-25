@@ -18,8 +18,8 @@ QuickStart
 ----------
 
 Following shows steps to checkout, run tests, then generate and send
-coverage report for a test suite named ``my-test-suite`` for Haskell
-package in repository root:
+coverage report for a test suite named ``my-test-suite`` in a Haskell
+cabal package in repository root:
 
 ```yaml
 name: Main
@@ -37,7 +37,7 @@ jobs:
         run: cabal test --enable-coverage
 
       - name: Generate coverage report
-        uses: 8c6794b6/hpc-codecov-action
+        uses: 8c6794b6/hpc-codecov-action@v1
         with:
           build-tool: cabal
           test-suite: my-test-suite
