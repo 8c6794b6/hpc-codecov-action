@@ -28,7 +28,7 @@ import GitHub.Actions.Exec (exec, defaultExecOptions)
 import Data.Maybe (Maybe(..))
 
 -- node-fs-aff
-import Node.FS.Aff (exists)
+import Node.FS.Aff (exists, unlink)
 
 -- node-path
 import Node.Path (resolve)
@@ -37,7 +37,7 @@ import Node.Path (resolve)
 import Node.Process (setEnv, unsetEnv)
 
 -- spec
-import Test.Spec (before_, describe, it)
+import Test.Spec (before_, beforeAll_, describe, it)
 import Test.Spec.Assertions (shouldReturn)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (Config, runSpecT, defaultConfig)
@@ -49,11 +49,11 @@ import Data.String (joinWith, toUpper)
 import Control.Monad.Except (runExceptT, throwError)
 
 -- Internal
-import Main (Inputs, BuildTool(..), mainAff)
+import Main (Inputs, BuildTool(..), getHpcCodecovMeta, mainAff, runAction)
 
 main :: Effect Unit
 main = do
-  ts <- runSpecT myConfig [consoleReporter] do
+  ts <- runSpecT myConfig [consoleReporter] $ beforeAll_ rmExeIfExist do
     let report build project inputs_for = do
           before_ (build project) $
             it "should generate Codecov report" do
@@ -87,6 +87,12 @@ main = do
 
 myConfig :: Config
 myConfig = defaultConfig {timeout = Just (Milliseconds 60000.0)}
+
+rmExeIfExist :: Aff Unit
+rmExeIfExist = do
+  meta <- runAction getHpcCodecovMeta
+  resolved <- liftEffect $ resolve [] meta.exe
+  whenM (exists resolved) $ unlink resolved
 
 withInputs :: forall a. Inputs -> Aff a -> Aff a
 withInputs inputs act = bracket acquire release (\_ -> act)

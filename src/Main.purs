@@ -25,7 +25,7 @@ import Data.Either (Either(..))
 import Effect.Exception (Error, error, message)
 
 -- maybe
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 
 -- node-buffer
 import Node.Buffer (toString)
@@ -100,21 +100,28 @@ work = getInputs >>= doWork >>= setOutputs
 
 -- | The guts of guts.
 doWork :: Inputs -> Action Outputs
-doWork = doWorkWith Nothing
+doWork inputs = do
+  meta <- getHpcCodecovMeta
+  exe_exists <- lift $ exists meta.exe
+  ifM (lift $ exists meta.exe)
+    (do resolved <- liftEffect $ resolve [] meta.exe
+        liftEffect $ Core.info ("Reusing " <> resolved)
+        doWorkWith meta inputs (Just resolved))
+    (doWorkWith meta inputs Nothing)
 
 -- | The guts of guts of guts.
 doWorkWith
-  :: Maybe String
-  -- ^ 'Just' path to `hpc-codecov`, or 'Nothing' to download from
-  -- latest release.
+  :: HpcCodecovMeta
+  -- ^ Meta information to get `hpc-codecov`.
   -> Inputs
   -- ^ Input paramater object.
+  -> Maybe String
+  -- ^ 'Just' path to `hpc-codecov`, or 'Nothing' to download from
+  -- latest release.
   -> Action Outputs
   -- ^ Output object of this action.
-doWorkWith mb_hpc_codecov inputs = do
-  hpc_codecov <- case mb_hpc_codecov of
-    Just path -> pure path
-    Nothing -> getHpcCodecov
+doWorkWith meta inputs mb_hpc_codecov = do
+  hpc_codecov <- maybe (getHpcCodecov meta) pure mb_hpc_codecov
   hpc_codecov_args <- getHpcCodecovArgs inputs
   let options = Exec.defaultExecOptions {cwd = Just inputs.project_root}
   exec { command: hpc_codecov
@@ -257,9 +264,8 @@ getHpcCodecovMeta = do
 -- | Download `hpc-codecov` executable. Internally uses `curl` to
 -- | simplify following redirect of the download URL.  Returns the
 -- | absolute path of the `hpc-codecov` executable.
-getHpcCodecov :: Action String
-getHpcCodecov = do
-  meta <- getHpcCodecovMeta
+getHpcCodecov :: HpcCodecovMeta -> Action String
+getHpcCodecov meta = do
   exec { command: "curl"
        , args: Just ["-sL", "--output", meta.exe, meta.url]
        , options: Nothing }
