@@ -12,7 +12,6 @@
 yarn-error.log
 dist/index.js
 dist/*.js.map
-dist/sourcemap-register.js
 coverage
 .nyc_output
 
