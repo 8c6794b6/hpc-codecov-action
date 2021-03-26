@@ -19,7 +19,8 @@ QuickStart
 
 Following shows steps to checkout, run tests, then generate and send
 coverage report for a test suite named ``my-test-suite`` in a Haskell
-cabal package in repository root:
+cabal package in repository root, with excluding module named ``Main``
+and ``Paths_my_package``:
 
 ```yaml
 name: Main
@@ -33,6 +34,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Update cabal package list
+        run: cabal update
+
       - name: Build and test
         run: cabal test --enable-coverage
 
@@ -41,6 +45,7 @@ jobs:
         with:
           build-tool: cabal
           test-suite: my-test-suite
+          excludes: Main,Paths_my_package
 
       - name: Send coverage report
         uses: codecov/codecov-action@v1
