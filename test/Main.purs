@@ -43,13 +43,13 @@ import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (Config, runSpecT, defaultConfig)
 
 -- strings
-import Data.String (joinWith, toUpper)
+import Data.String (toUpper)
 
 -- transformers
 import Control.Monad.Except (runExceptT, throwError)
 
 -- Internal
-import Main (Inputs, BuildTool(..), getHpcCodecovMeta, mainAff, runAction)
+import Main (Inputs, getHpcCodecovMeta, mainAff, runAction)
 
 main :: Effect Unit
 main = do
@@ -65,23 +65,28 @@ main = do
 
     describe "Generate report for project1 with stack" do
       report stackBuild "project1" $ \root ->
-        { build_tool: Stack
-        , build_tool_args: "--skip-msys"
-        , verbose: true
-        , test_suite: "project1-test"
-        , project_root: root
-        , excludes: []
-        , out: "codecov-stack.json" }
+        { target: "stack:project1-test"
+        , mix: ""
+        , src: ""
+        , excludes: ""
+        , out: "codecov-stack.json"
+        , root: root
+        , build: ""
+        , skip: ""
+        , verbose: true }
+
 
     describe "Generate report for project1 with cabal-install" do
       report cabalBuild "project1" $ \root ->
-        { build_tool: CabalInstall
-        , build_tool_args: ""
-        , verbose: false
-        , test_suite: "project1-test"
-        , project_root: root
-        , excludes: ["Main", "Paths_project1"]
-        , out: "codecov-cabal.json" }
+        { target: "cabal:project1-test"
+        , mix: ""
+        , src: ""
+        , excludes: "Main,Paths_project1"
+        , out: "codecov-cabal.json"
+        , root: root
+        , build: ""
+        , skip: ""
+        , verbose: true }
 
   launchAff_ ts
 
@@ -103,13 +108,16 @@ withInputs inputs act = bracket acquire release (\_ -> act)
     trav = liftEffect <<< flip traverse_ ps
 
     ps =
-      [ p "build-tool" (show inputs.build_tool)
-      , p "build-tool-args" inputs.build_tool_args
+      [ p "target" inputs.target
+      , p "mix" inputs.mix
+      , p "src" inputs.src
+      , p "excludes" inputs.excludes
+      , p "out" inputs.out
       , p "verbose" (show inputs.verbose)
-      , p "test-suite" inputs.test_suite
-      , p "project-root" inputs.project_root
-      , p "excludes" (joinWith "," inputs.excludes)
-      , p "out" inputs.out ]
+      , p "root" inputs.root
+      , p "build" inputs.build
+      , p "skip" inputs.skip
+      ]
 
     p k v = {k:k, v:v}
 

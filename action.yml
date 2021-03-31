@@ -3,51 +3,71 @@ name: "hpc-codecov-action"
 description: "Generate Codecov report for Haskell project"
 
 inputs:
-  build-tool:
-    description: "Build tool to use, 'stack' or 'cabal-install'"
+  target:
+    description: |
+      Target to generate test coverage. Either a path to ``.tix`` file,
+      or ``TOOL:TEST_SUITE`` style string value.
     required: true
-    default: stack
 
-  build-tool-args:
-    description: "Arguments passed to the `build-tool`"
+  mix:
+    description: |
+      Comma separated directory names containing ``.mix`` files.
     required: false
     default: ""
 
-  project-root:
+  src:
     description: |
-      Project root directory, typically the directory containing
-      "stack.yaml" or "cabal.project".
+      Comma separated directory names for source code lookup.
     required: false
-    default: "."
-
-  verbose:
-    description: "Show verbose output"
-    required: false
-    default: true
-
-  test-suite:
-    description: |
-      Name of the test suite to look for .tix file. Use 'all' to get
-      unified coverage when running with 'stack'.
-    required: true
+    default: ""
 
   excludes:
     description: |
-      Comma separated module names to exclude from coverage report.
-      E.g.: "Main,Paths_project1,Foo,Bar"
+      Comma separated module names to exclude from coverage report,
+      E.g.: ``Main,Paths_project1,Foo,Bar``.
     required: false
     default: ""
 
   out:
-    description: "Output path to write the report"
+    description: "Output path to write the report."
     required: false
     default: ./codecov.json
 
+  root:
+    description: |
+      Project root directory, typically the directory containing
+      ``stack.yaml`` or ``cabal.project``.
+    required: false
+    default: "."
+
+  build:
+    description: |
+      Name of the directory made by the build tool. Default is
+      ``.stack-work`` for stack, and ``dist-newstyle`` for cabal.
+    required: false
+    default: ""
+
+  skip:
+    description: |
+      Comma separated directory names to skip when searching files for
+      TOOL.
+    required: false
+    default: ""
+
+  verbose:
+    description: |
+      Show verbose output.
+    required: false
+    default: "true"
+
 outputs:
   exe:
-    description: "Path of hpc-codecov executable"
+    description: |
+      Path of hpc-codecov executable.
+
   report:
-    description: "Path of generated coverage report JSON file"
+    description: |
+      Path of generated coverage report JSON file.
 
 runs:
   using: "node12"

@@ -49,11 +49,9 @@ jobs:
         uses: ./
         id: p1-stack
         with:
-          build-tool: 'stack'
-          build-tool-args: '--skip-msys'
-          project-root: 'hs/project1'
-          test-suite: 'project1-test'
-          out: 'p1-stack.json'
+          target: stack:project1-test
+          root: hs/project1
+          out: p1-stack.json
 
       - name: Show outputs of p1-stack
         run: |
@@ -64,9 +62,8 @@ jobs:
         uses: ./
         id: p1-cabal
         with:
-          build-tool: 'cabal'
-          project-root: 'hs/project1'
-          test-suite: 'project1-test'
+          target: 'cabal:project1-test'
+          root: 'hs/project1'
           excludes: 'Main,Paths_project1'
           out: 'p1-cabal.json'
 
