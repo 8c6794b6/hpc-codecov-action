@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Building the sample projects before running "yarn test", to
+      # Building the sample projects before running "npm test", to
       # avoid timeout.
 
       - name: Build and test sample project with stack
@@ -36,11 +36,11 @@ jobs:
         run: |
           ( cd hs/project1 && cabal test --enable-coverage )
 
-      - name: Build with yarn
-        run: yarn && yarn clean && yarn dist
+      - name: Build with npm
+        run: npm install && npm run clean && npm run dist
 
       - name: Run tests with coverage
-        run: yarn coverage
+        run: npm run coverage
 
       - name: Send coverage report
         run: bash <(curl -s https://codecov.io/bash)

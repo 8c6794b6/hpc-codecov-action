@@ -6,8 +6,8 @@
   "scripts": {
     "build": "spago bundle-app -x -u \"-g sourcemaps\" -t output/index.js",
     "clean": "rm -rf output dist coverage .nyc_output",
-    "coverage": "yarn build && nyc spago test",
-    "dist": "yarn build && yarn ncc && yarn uglify",
+    "coverage": "npm run build && nyc --use-spawn-wrap spago test",
+    "dist": "npm run build && npm run ncc && npm run uglify",
     "test": "spago test",
     "ncc": "ncc build output/index.js -s",
     "uglify": "uglifyjs --toplevel --source-map -m -c -o dist/main.js dist/index.js",
