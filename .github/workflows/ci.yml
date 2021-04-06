@@ -6,6 +6,9 @@ on:
     paths-ignore:
       - '**.md'
 
+env:
+  cache-version: v5
+
 defaults:
   run:
     shell: bash
@@ -23,6 +26,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+        # XXX: Caching stack directories for macos-latest is disabled
+        # at the moment, executable installed under cache directory
+        # not working well ...
+
+      - name: Cache directory for stack (ubuntu-latest)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/cache@v2
+        with:
+          path: ~/.stack/
+          key: ${{ runner.os }}-stack-${{ env.cache-version }}
+
+      - name: Cache directory for stack (windows-latest)
+        if: matrix.os == 'windows-latest'
+        uses: actions/cache@v2
+        with:
+          path: C:\Users\runneradmin\AppData\Local\Programs\stack\
+          key: ${{ runner.os }}-stack-${{ env.cache-version }}
+
+      - name: Cache more directories for stack under windows
+        if: matrix.os == 'windows-latest'
+        uses: actions/cache@v2
+        with:
+          path: C:\Users\runneradmin\AppData\Roaming\stack\
+          key: ${{ runner.os }}-stack-win-extra-${{ env.cache-version }}
 
       # Building the sample projects before running "npm test", to
       # avoid timeout.
@@ -62,10 +90,10 @@ jobs:
         uses: ./
         id: p1-cabal
         with:
-          target: 'cabal:project1-test'
-          root: 'hs/project1'
-          excludes: 'Main,Paths_project1'
-          out: 'p1-cabal.json'
+          target: cabal:project1-test
+          root: hs/project1
+          excludes: Main,Paths_project1
+          out: p1-cabal.json
 
       - name: Show outputs of p1-cabal
         run: |
