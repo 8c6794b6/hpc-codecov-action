@@ -1,6 +1,10 @@
-name: "hpc-codecov-action"
+name: 'hpc-codecov-action'
 
-description: "Generate Codecov report for Haskell project"
+description: 'Generate Codecov report for Haskell project'
+
+branding:
+  icon: 'umbrella'
+  color: 'purple'
 
 inputs:
   target:
@@ -70,5 +74,5 @@ outputs:
       Path of generated coverage report JSON file.
 
 runs:
-  using: "node12"
-  main: "dist/main.js"
+  using: 'node12'
+  main: 'dist/main.js'
