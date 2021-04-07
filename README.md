@@ -15,7 +15,7 @@ QuickStart
 
 Following shows simple example, assuming that the repository root
 contains a Haskell cabal package named ``my-package``, and the package
-contain a test suite named ``my-test-suite``:
+contains a test suite named ``my-test-suite``:
 
 ```yaml
 name: Main
