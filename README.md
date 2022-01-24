@@ -42,7 +42,7 @@ jobs:
           excludes: Main,Paths_my_package
 
       - name: Send coverage report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
 ```
 
 Inputs
