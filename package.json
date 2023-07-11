@@ -4,9 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "spago bundle-app -x -u \"-g sourcemaps\" -t output/index.js",
+    "build": "spago bundle-app --platform=node -x -y -u \"-g sourcemaps\" -t output/index.js",
     "clean": "rm -rf output dist coverage .nyc_output",
-    "coverage": "npm run build && nyc --use-spawn-wrap spago test",
+    "coverage": "npm run build && npm exec -- c8 spago test",
     "dist": "npm run build && npm run ncc && npm run uglify",
     "test": "spago test",
     "ncc": "ncc build output/index.js -s",
@@ -14,15 +14,16 @@
     "watch": "spago build -x -u '-g sourcemaps' --watch"
   },
   "dependencies": {
-    "@actions/core": "^1.2.6",
-    "@actions/exec": "^1.0.4",
-    "@actions/io": "^1.1.0"
+    "@actions/core": "^1.10.0",
+    "@actions/exec": "^1.1.1",
+    "@actions/io": "^1.1.3",
+    "esbuild": "0.18.10"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.27.0",
-    "nyc": "^15.1.0",
-    "purescript": "^0.14.0",
-    "spago": "^0.19.2",
-    "uglify-js": "^3.13.3"
+    "@vercel/ncc": "^0.36.1",
+    "c8": "^8.0.0",
+    "purescript": "^0.15.9",
+    "spago": "^0.21.0",
+    "uglify-js": "^3.17.4"
   }
 }

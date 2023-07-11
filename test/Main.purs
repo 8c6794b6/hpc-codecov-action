@@ -9,6 +9,9 @@ import Effect.Class (liftEffect)
 -- aff
 import Effect.Aff (Aff, launchAff_, bracket)
 
+-- control
+import Control.Alt ((<|>))
+
 -- datetimes
 import Data.Time.Duration (Milliseconds(..))
 
@@ -27,8 +30,11 @@ import GitHub.Actions.Exec (exec, defaultExecOptions)
 -- maybe
 import Data.Maybe (Maybe(..))
 
+-- node-fs
+import Node.FS.Stats (isFile)
+
 -- node-fs-aff
-import Node.FS.Aff (exists, unlink)
+import Node.FS.Aff (stat, unlink)
 
 -- node-path
 import Node.Path (resolve)
@@ -37,8 +43,8 @@ import Node.Path (resolve)
 import Node.Process (setEnv, unsetEnv)
 
 -- spec
-import Test.Spec (before_, beforeAll_, describe, it)
-import Test.Spec.Assertions (shouldReturn)
+import Test.Spec (SpecT, before_, beforeAll_, describe, it)
+import Test.Spec.Assertions (shouldSatisfy)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (Config, runSpecT, defaultConfig)
 
@@ -53,42 +59,44 @@ import Main (Inputs, getHpcCodecovMeta, mainAff, runAction)
 
 main :: Effect Unit
 main = do
-  ts <- runSpecT myConfig [consoleReporter] $ beforeAll_ rmExeIfExist do
-    let report build project inputs_for = do
-          before_ (build project) $
-            it "should generate Codecov report" do
-              project_root <- liftEffect (resolve ["hs"] project)
-              let inputs = inputs_for project_root
-              withInputs inputs mainAff
-              out <- liftEffect $ resolve [project_root] inputs.out
-              exists out `shouldReturn` true
+  aff <- runSpecT myConfig [consoleReporter] spec
+  launchAff_ (void aff)
 
-    describe "Generate report for project1 with stack" do
-      report stackBuild "project1" $ \root ->
-        { target: "stack:project1-test"
-        , mix: ""
-        , src: ""
-        , excludes: ""
-        , out: "codecov-stack.json"
-        , root: root
-        , build: ""
-        , skip: ""
-        , verbose: true }
+spec :: SpecT Aff Unit Effect Unit
+spec = beforeAll_ rmExeIfExist do
+  let report build project inputs_for =
+        before_ (build project) $
+          it "should generate Codecov report" do
+            project_root <- liftEffect (resolve ["hs"] project)
+            let inputs = inputs_for project_root
+            withInputs inputs mainAff
+            out <- liftEffect $ resolve [project_root] inputs.out
+            res <- stat out
+            res `shouldSatisfy` isFile
 
+  describe "Generate report for project1 with stack" do
+    report stackBuild "project1" $ \root ->
+      { target: "stack:project1-test"
+      , mix: ""
+      , src: ""
+      , excludes: ""
+      , out: "codecov-stack.json"
+      , root: root
+      , build: ""
+      , skip: ""
+      , verbose: true }
 
-    describe "Generate report for project1 with cabal-install" do
-      report cabalBuild "project1" $ \root ->
-        { target: "cabal:project1-test"
-        , mix: ""
-        , src: ""
-        , excludes: "Main,Paths_project1"
-        , out: "codecov-cabal.json"
-        , root: root
-        , build: ""
-        , skip: ""
-        , verbose: true }
-
-  launchAff_ ts
+  describe "Generate report for project1 with cabal-install" do
+    report cabalBuild "project1" $ \root ->
+      { target: "cabal:project1-test"
+      , mix: ""
+      , src: ""
+      , excludes: "Main,Paths_project1"
+      , out: "codecov-cabal.json"
+      , root: root
+      , build: ""
+      , skip: ""
+      , verbose: true }
 
 myConfig :: Config
 myConfig = defaultConfig {timeout = Just (Milliseconds 60000.0)}
@@ -97,7 +105,7 @@ rmExeIfExist :: Aff Unit
 rmExeIfExist = do
   meta <- runAction getHpcCodecovMeta
   resolved <- liftEffect $ resolve [] meta.exe
-  whenM (exists resolved) $ unlink resolved
+  unlink resolved <|> pure unit
 
 withInputs :: forall a. Inputs -> Aff a -> Aff a
 withInputs inputs act = bracket acquire release (\_ -> act)
@@ -121,13 +129,12 @@ withInputs inputs act = bracket acquire release (\_ -> act)
 
     p k v = {k:k, v:v}
 
-    -- See: @actions/core/lib/input.js
+    -- See: function "getInput" in @actions/core/lib/core.js
     github_key name = "INPUT_" <> toUpper name
 
-
 stackBuild :: String -> Aff Unit
-stackBuild = buildProject "stack --skip-msys"
-               ["build", "--fast", "--test", "--coverage"]
+stackBuild = buildProject "stack"
+               ["--skip-msys", "build", "--fast", "--test", "--coverage"]
 
 cabalBuild :: String -> Aff Unit
 cabalBuild = buildProject "cabal" ["test", "--enable-coverage"]
