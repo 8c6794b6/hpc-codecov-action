@@ -23,9 +23,10 @@ import Data.Maybe (Maybe(..), maybe)
 
 -- node-fs
 import Node.FS.Perms (mkPerms, read, execute, all)
+import Node.FS.Constants (x_OK)
 
 -- node-fs-aff
-import Node.FS.Aff (chmod, exists)
+import Node.FS.Aff (access', chmod)
 
 -- node-path
 import Node.Path (resolve)
@@ -81,11 +82,13 @@ work = getInputs >>= doWork >>= setOutputs
 doWork :: Inputs -> Action Outputs
 doWork inputs = do
   meta <- getHpcCodecovMeta
-  ifM (lift $ exists meta.exe)
-    (do resolved <- liftEffect $ resolve [] meta.exe
-        liftEffect $ Core.info ("Reusing " <> resolved)
-        doWorkWith meta inputs (Just resolved))
-    (doWorkWith meta inputs Nothing)
+  resolved <- liftEffect $ resolve [] meta.exe
+  mb_err <- lift $ access' resolved x_OK
+  let {msg, mb_exe} = case mb_err of
+        Just _ -> {msg: "Fetching " <> meta.url, mb_exe: Nothing}
+        Nothing -> {msg: "Reusing " <> resolved, mb_exe: Just resolved}
+  liftEffect (Core.info msg)
+  doWorkWith meta inputs mb_exe
 
 -- | The guts of guts of guts.
 doWorkWith
@@ -94,19 +97,17 @@ doWorkWith
   -> Inputs
   -- ^ Input paramater object.
   -> Maybe String
-  -- ^ 'Just' path to `hpc-codecov`, or 'Nothing' to download from
-  -- latest release.
+  -- ^ 'Just' path to `hpc-codecov`, or 'Nothing' to download latest
+  -- release from the github repository.
   -> Action Outputs
   -- ^ Output object of this action.
 doWorkWith meta inputs mb_hpc_codecov = do
   hpc_codecov <- maybe (getHpcCodecov meta) pure mb_hpc_codecov
-  hpc_codecov_args <- getHpcCodecovArgs inputs
-  let options = Exec.defaultExecOptions {cwd = Just inputs.root}
-  exec { command: hpc_codecov
-       , args: Just hpc_codecov_args
-       , options: Just options }
+  args <- map Just $ getHpcCodecovArgs inputs
+  let options = Just $ Exec.defaultExecOptions {cwd = Just inputs.root}
+  exec {command: hpc_codecov, args, options}
   report <- liftEffect $ resolve [inputs.root] inputs.out
-  pure {exe: hpc_codecov, report: report}
+  pure {exe: hpc_codecov, report}
 
 
 -- ------------------------------------------------------------------------
@@ -137,7 +138,6 @@ type Outputs =
   }
 
 -- | Get github action inputs specified in `action.yml`.
--- getInputs :: ExceptT Error Effect Inputs
 getInputs :: Action Inputs
 getInputs = liftEffect (runExceptT go) >>= except
   where
@@ -152,16 +152,7 @@ getInputs = liftEffect (runExceptT go) >>= except
       build <- optionalInput "build"
       skip <- optionalInput "skip"
 
-      pure { target: target
-           , mix: mix
-           , src: src
-           , excludes: excludes
-           , out: out
-           , verbose: verbose
-           , root: root
-           , build: build
-           , skip: skip
-           }
+      pure {target, mix, src, excludes, out, verbose, root, build, skip}
 
 getVerbose :: ExceptT Error Effect Boolean
 getVerbose = do
@@ -206,7 +197,7 @@ type HpcCodecovMeta =
 -- | Make a URL to download `hpc-codecov`.
 mkURL :: String -> String
 mkURL name =
-  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.3.0.0/"
+  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.4.0.0/"
   <> name
 
 -- | Get meta information to download `hpc-codecov` executable for
