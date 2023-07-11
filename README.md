@@ -27,13 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Update cabal package list
-        run: cabal update
+        uses: actions/checkout@v3
 
       - name: Build and test
-        run: cabal test --enable-coverage
+        run: |
+          cabal update
+          cabal test --enable-coverage
 
       - name: Generate coverage report
         uses: 8c6794b6/hpc-codecov-action@v2
@@ -42,7 +41,7 @@ jobs:
           excludes: Main,Paths_my_package
 
       - name: Send coverage report
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
 ```
 
 Inputs
