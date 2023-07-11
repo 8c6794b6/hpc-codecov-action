@@ -25,7 +25,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
 
         # XXX: Caching stack directories for macos-latest is disabled
         # at the moment, executable installed under cache directory
@@ -33,21 +35,21 @@ jobs:
 
       - name: Cache directory for stack (ubuntu-latest)
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.stack/
           key: ${{ runner.os }}-stack-${{ env.cache-version }}
 
       - name: Cache directory for stack (windows-latest)
         if: matrix.os == 'windows-latest'
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: C:\Users\runneradmin\AppData\Local\Programs\stack\
           key: ${{ runner.os }}-stack-${{ env.cache-version }}
 
       - name: Cache more directories for stack under windows
         if: matrix.os == 'windows-latest'
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: C:\Users\runneradmin\AppData\Roaming\stack\
           key: ${{ runner.os }}-stack-win-extra-${{ env.cache-version }}
@@ -71,7 +73,7 @@ jobs:
         run: npm run coverage
 
       - name: Send coverage report
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
 
       - name: Generate coverage report of project1 with stack
         uses: ./
