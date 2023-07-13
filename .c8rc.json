@@ -1,0 +1,18 @@
+{
+    "extensions": [
+	".purs"
+    ],
+
+    "exclude": [
+	".spago/**/*",
+	".psci_modules/**/*",
+	"dist/**/*",
+	"output/!(Main)/**"
+    ],
+
+    "reporter": [
+	"html",
+	"text",
+	"lcov"
+    ]
+}
