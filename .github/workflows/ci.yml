@@ -67,7 +67,11 @@ jobs:
           ( cd hs/project1 && cabal test --enable-coverage )
 
       - name: Build with npm
-        run: npm install && npm run clean && npm run dist
+        run: |
+          npm install
+          npm run clean
+          npm run build
+          npm run bundle
 
       - name: Run tests with coverage
         run: npm run coverage

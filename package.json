@@ -7,8 +7,7 @@
     "build": "spago build -u \"-g sourcemaps\"",
     "bundle": "node js/bundle.js",
     "clean": "rm -rf output dist coverage",
-    "coverage": "npm run build && c8 spago test",
-    "dist": "npm run build && npm run bundle",
+    "coverage": "c8 spago test",
     "test": "spago test",
     "watch": "spago build -x -u '-g sourcemaps' --watch"
   },
