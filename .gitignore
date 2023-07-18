@@ -22,4 +22,6 @@ dist-newstyle
 
 codecov*.json
 
+hpc-codecov*
+
 *~
