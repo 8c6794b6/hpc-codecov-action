@@ -124,6 +124,7 @@ type Inputs =
   , src :: String
   , excludes :: String
   , out :: String
+  , format :: Format
   , root :: String
   , build :: String
   , skip :: String
@@ -137,6 +138,13 @@ type Outputs =
   , report :: String
   }
 
+-- | Purescript representation of supported output report format.
+data Format = Codecov | Lcov
+
+instance Show Format where
+  show Codecov = "codecov"
+  show Lcov = "lcov"
+
 -- | Get github action inputs specified in `action.yml`.
 getInputs :: Action Inputs
 getInputs = liftEffect (runExceptT go) >>= except
@@ -146,13 +154,14 @@ getInputs = liftEffect (runExceptT go) >>= except
       mix <- optionalInput "mix"
       src <- optionalInput "src"
       excludes <- optionalInput "excludes"
-      out <- optionalInput "out"
+      format <- getFormat
+      out <- defaultOutOnEmpty format <$> optionalInput "out"
       verbose <- getVerbose
       root <- optionalInput "root"
       build <- optionalInput "build"
       skip <- optionalInput "skip"
 
-      pure {target, mix, src, excludes, out, verbose, root, build, skip}
+      pure {target, mix, src, excludes, out, format, verbose, root, build, skip}
 
 getVerbose :: ExceptT Error Effect Boolean
 getVerbose = do
@@ -165,6 +174,24 @@ getVerbose = do
         "expecting 'true' or 'false' for input 'verbose', but got " <>
         show str <> ", setting verbosity to 'true'."
       pure true
+
+getFormat :: ExceptT Error Effect Format
+getFormat = do
+  str <- optionalInput "format"
+  case str of
+    "codecov" -> pure Codecov
+    "lcov" -> pure Lcov
+    _ -> do
+      liftEffect $ Core.error $
+        "expecting 'codecov' or 'lcov' for input 'format', but got " <> show str
+      throwError (error ("invalid format: " <> show str))
+
+defaultOutOnEmpty :: Format -> String -> String
+defaultOutOnEmpty format str =
+  case format, str of
+    Codecov, "" -> "codecov.json"
+    Lcov, ""    -> "lcov.info"
+    _, _        -> str
 
 optionalInput :: String -> ExceptT Error Effect String
 optionalInput n = Core.getInput {name: n, options: Nothing}
@@ -247,6 +274,7 @@ getHpcCodecovArgs inputs = do
     f "--src" inputs.src <>
     f "--exclude" inputs.excludes <>
     f "--out" inputs.out <>
+    f "--format" (show inputs.format) <>
     f "--root" root_resolved <>
     f "--build" inputs.build <>
     f "--skip" inputs.skip <>

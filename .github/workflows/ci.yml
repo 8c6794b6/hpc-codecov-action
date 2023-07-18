@@ -101,3 +101,17 @@ jobs:
         run: |
           echo "outputs.exe: ${{ steps.p1-cabal.outputs.exe }}"
           echo "outputs.report: ${{ steps.p1-cabal.outputs.report }}"
+
+      - name: Generate coverage report of project1 with cabal in lcov format
+        uses: ./
+        id: p1-cabal-lcov
+        with:
+          target: cabal:project1-test
+          root: hs/project1
+          excludes: Main,Paths_project1
+          format: lcov
+
+      - name: Show outputs of p1-cabal-lcov
+        run: |
+          echo "outputs.exe: ${{ steps.p1-cabal-lcov.outputs.exe }}"
+          echo "outputs.report: ${{ steps.p1-cabal-lcov.outputs.report }}"

@@ -51,12 +51,13 @@ Inputs
 |------|----------|---------|-------------|
 |``target``|**Yes**|N/A|Target to generate test coverage. Either a path to ``.tix`` file, or ``TOOL:TEST_SUITE`` style string value. |
 |``mix``|No|N/A|Comma separated directory names containing ``.mix`` files. |
-|``src``|No|N/A|Comma separated directory names for source code lookup. |
+|``src``|No|N/A|Comma separated directory names for source code lookup.|
 |``excludes``|No|N/A|Comma separated module names to exclude from coverage report, E.g.: ``Main,Paths_project1,Foo,Bar``. |
-|``out``|No|``./codecov.json``|Output path to write the report.|
-|``root``|No|``.``|Project root directory, typically the directory containing ``stack.yaml`` or ``cabal.project``. |
-|``build``|No|N/A|Name of the directory made by the build tool. Default is ``.stack-work`` for stack, and ``dist-newstyle`` for cabal. |
-|``skip``|No|N/A|Comma separated directory names to skip when searching files for TOOL. |
+|``skip``|No|N/A|Comma separated directory names to skip when searching files for ``TOOL``.|
+|``format``|No|``codecov``|Format of the output report, ``codecov`` or ``lcov``|
+|``out``|No|``./codecov.json`` when the ``format`` is ``codecov``, or ``./lcov.info`` when the ``format`` is ``lcov``|Output path to write the report.|
+|``root``|No|``./``|Project root directory, typically the directory containing ``stack.yaml`` or ``cabal.project``. |
+|``build``|No|``.stack-work`` when the ``TOOL`` is ``stack``, or ``dist-newstyle`` when the ``TOOL`` is  ``cabal``|Name of the directory made by the build tool.|
 |``verbose``|No|``true``|Show verbose output. |
 
 
@@ -66,7 +67,7 @@ Outputs
 | Name | Description |
 |------|-------------|
 |``exe``|Path of hpc-codecov executable.|
-|``report``|Path of generated coverage report JSON file.|
+|``report``|Path of generated coverage report file.|
 
 
 Examples

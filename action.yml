@@ -32,10 +32,25 @@ inputs:
     required: false
     default: ""
 
-  out:
-    description: "Output path to write the report."
+  skip:
+    description: |
+      Comma separated directory names to skip when searching files for
+      ``TOOL``.
     required: false
-    default: ./codecov.json
+    default: ""
+
+  format:
+    description: |
+      Format of the output report, ``codecov`` or ``lcov``.
+    default: "codecov"
+
+  out:
+    description: |
+      Output path to write the report.
+    required: false
+    # Default value of `out' depends on the `format' input value,
+    # filled in the PureScript code.
+    default: ""
 
   root:
     description: |
@@ -46,16 +61,10 @@ inputs:
 
   build:
     description: |
-      Name of the directory made by the build tool. Default is
-      ``.stack-work`` for stack, and ``dist-newstyle`` for cabal.
+      Name of the directory made by the build tool.
     required: false
-    default: ""
-
-  skip:
-    description: |
-      Comma separated directory names to skip when searching files for
-      TOOL.
-    required: false
+    # Default is ``.stack-work`` for stack, and ``dist-newstyle`` for
+    # cabal, filled in the PureScript code
     default: ""
 
   verbose:
@@ -71,7 +80,7 @@ outputs:
 
   report:
     description: |
-      Path of generated coverage report JSON file.
+      Path of generated coverage report file.
 
 runs:
   using: 'node16'

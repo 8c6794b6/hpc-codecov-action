@@ -55,7 +55,8 @@ import Data.String (toUpper)
 import Control.Monad.Except (runExceptT, throwError)
 
 -- Internal
-import Main (Inputs, getHpcCodecovMeta, mainAff, runAction)
+import Main ( Inputs, Format(..), getHpcCodecovMeta, mainAff, runAction
+            , defaultOutOnEmpty )
 
 main :: Effect Unit
 main = do
@@ -69,34 +70,42 @@ spec = beforeAll_ rmExeIfExist do
           it "should generate Codecov report" do
             project_root <- liftEffect (resolve ["hs"] project)
             let inputs = inputs_for project_root
+                oname = defaultOutOnEmpty inputs.format inputs.out
             withInputs inputs mainAff
-            out <- liftEffect $ resolve [project_root] inputs.out
+            out <- liftEffect $ resolve [project_root] oname
             res <- stat out
             res `shouldSatisfy` isFile
+      base_input =
+        { target: ""
+        , mix: ""
+        , src: ""
+        , excludes: "Main,Paths_project1"
+        , skip: ""
+        , format: Codecov
+        , out: ""
+        , root: ""
+        , build: ""
+        , verbose: true
+        }
 
   describe "Generate report for project1 with stack" do
     report stackBuild "project1" $ \root ->
-      { target: "stack:project1-test"
-      , mix: ""
-      , src: ""
-      , excludes: ""
-      , out: "codecov-stack.json"
-      , root: root
-      , build: ""
-      , skip: ""
-      , verbose: true }
+      base_input { target = "stack:project1-test"
+                 , out = "codecov-stack.json"
+                 , root = root }
 
   describe "Generate report for project1 with cabal-install" do
     report cabalBuild "project1" $ \root ->
-      { target: "cabal:project1-test"
-      , mix: ""
-      , src: ""
-      , excludes: "Main,Paths_project1"
-      , out: "codecov-cabal.json"
-      , root: root
-      , build: ""
-      , skip: ""
-      , verbose: true }
+      base_input { target = "cabal:project1-test"
+                 , format = Lcov
+                 , out = "codecov-cabal.lcov"
+                 , root = root}
+
+  describe "Generate report for project1 with cabal-install, default out" do
+    report cabalBuild "project1" $ \root ->
+      base_input { target = "cabal:project1-test"
+                 , format = Lcov
+                 , root = root }
 
 myConfig :: Config
 myConfig = defaultConfig {timeout = Just (Milliseconds 60000.0)}
@@ -121,6 +130,7 @@ withInputs inputs act = bracket acquire release (\_ -> act)
       , p "src" inputs.src
       , p "excludes" inputs.excludes
       , p "out" inputs.out
+      , p "format" (show inputs.format)
       , p "verbose" (show inputs.verbose)
       , p "root" inputs.root
       , p "build" inputs.build
