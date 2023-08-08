@@ -32,7 +32,9 @@ jobs:
       - name: Build and test
         run: |
           cabal update
-          cabal test --enable-coverage
+          cabal configure --enable-coverage
+          cabal build
+          cabal test
 
       - name: Generate coverage report
         uses: 8c6794b6/hpc-codecov-action@v2
@@ -49,14 +51,14 @@ Inputs
 
 | Name | Required | Default | Description |
 |------|----------|---------|-------------|
-|``target``|**Yes**|N/A|Target to generate test coverage. Either a path to ``.tix`` file, or ``TOOL:TEST_SUITE`` style string value. |
+|``target``|**Yes**|N/A|Target to generate test coverage. Either a path to ``.tix`` file, or a ``TOOL:TEST_SUITE`` style string value. |
 |``mix``|No|N/A|Comma separated directory names containing ``.mix`` files. |
 |``src``|No|N/A|Comma separated directory names for source code lookup.|
 |``excludes``|No|N/A|Comma separated module names to exclude from coverage report, E.g.: ``Main,Paths_project1,Foo,Bar``. |
 |``skip``|No|N/A|Comma separated directory names to skip when searching files for ``TOOL``.|
 |``format``|No|``codecov``|Format of the output report, ``codecov`` or ``lcov``|
 |``out``|No|``./codecov.json`` when the ``format`` is ``codecov``, or ``./lcov.info`` when the ``format`` is ``lcov``|Output path to write the report.|
-|``root``|No|``./``|Project root directory, typically the directory containing ``stack.yaml`` or ``cabal.project``. |
+|``root``|No|``./``|Project root directory, usually the directory containing ``stack.yaml`` or ``cabal.project``. |
 |``build``|No|``.stack-work`` when the ``TOOL`` is ``stack``, or ``dist-newstyle`` when the ``TOOL`` is  ``cabal``|Name of the directory made by the build tool.|
 |``verbose``|No|``true``|Show verbose output. |
 
