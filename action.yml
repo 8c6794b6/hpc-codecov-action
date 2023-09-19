@@ -83,5 +83,5 @@ outputs:
       Path of generated coverage report file.
 
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/main.mjs'
