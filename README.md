@@ -39,7 +39,7 @@ jobs:
           cabal test
 
       - name: Generate coverage report
-        uses: 8c6794b6/hpc-codecov-action@v2
+        uses: 8c6794b6/hpc-codecov-action@v3
         with:
           target: cabal:my-test-suite
           excludes: Main,Paths_my_package
