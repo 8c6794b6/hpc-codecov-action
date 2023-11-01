@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update the hpc-codecov version to 0.4.1.0
+- Update the ``hpc-codecov`` version to 0.5.0.0
 - Update the node version to run the action from ``node16`` to ``node20``.
 - Update package dependencies from npm.
 

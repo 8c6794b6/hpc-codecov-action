@@ -5,7 +5,9 @@ hpc-codecov-action
 [![codecov](https://codecov.io/gh/8c6794b6/hpc-codecov-action/branch/main/graph/badge.svg?token=P8DDZGTB74)](https://codecov.io/gh/8c6794b6/hpc-codecov-action)
 
 
-GitHub action to generate [Codecov](https://codecov.io) report for
+GitHub action to generate [Codecov](https://codecov.io),
+[LCOV](https://github.com/linux-test-project/lcov), and
+[Cobertura](https://cobertura.github.io/cobertura/) report for
 [Haskell](https://haskell.org) codes with
 [hpc-codecov](https://github.com/8c6794b6/hpc-codecov).
 
@@ -13,9 +15,9 @@ GitHub action to generate [Codecov](https://codecov.io) report for
 QuickStart
 ----------
 
-Following shows simple example, assuming that the repository root
-contains a Haskell cabal package named ``my-package``, and the package
-contain a test suite named ``my-test-suite``:
+The following shows a simple example, assuming that the
+repository-root contains a Haskell cabal package named ``my-package``,
+and the package contains a test suite named ``my-test-suite``:
 
 ```yaml
 name: Main
@@ -51,13 +53,13 @@ Inputs
 
 | Name | Required | Default | Description |
 |------|----------|---------|-------------|
-|``target``|**Yes**|N/A|Target to generate test coverage. Either a path to ``.tix`` file, or a ``TOOL:TEST_SUITE`` style string value. |
-|``mix``|No|N/A|Comma separated directory names containing ``.mix`` files. |
-|``src``|No|N/A|Comma separated directory names for source code lookup.|
-|``excludes``|No|N/A|Comma separated module names to exclude from coverage report, E.g.: ``Main,Paths_project1,Foo,Bar``. |
+|``target``|**Yes**|N/A|Target to generate test coverage. Either a path to a ``.tix`` file or a ``TOOL:TEST_SUITE`` style string value. |
+|``mix``|No|N/A|Comma-separated directory names containing ``.mix`` files. |
+|``src``|No|N/A|Comma-separated directory names for source code lookup.|
+|``excludes``|No|N/A|Comma-separated module names to exclude from coverage report, E.g.: ``Main,Paths_project1,Foo,Bar``. |
 |``skip``|No|N/A|Comma separated directory names to skip when searching files for ``TOOL``.|
-|``format``|No|``codecov``|Format of the output report, ``codecov`` or ``lcov``|
-|``out``|No|``./codecov.json`` when the ``format`` is ``codecov``, or ``./lcov.info`` when the ``format`` is ``lcov``|Output path to write the report.|
+|``format``|No|``codecov``|Format of the output report, ``codecov``, ``lcov``, or ``cobertura``|
+|``out``|No|``./codecov.json`` when the ``format`` is ``codecov``, ``./lcov.info`` when the ``format`` is ``lcov``, or ``./coverage.xml`` when the ``format`` is ``cobertura``|Output path to write the report.|
 |``root``|No|``./``|Project root directory, usually the directory containing ``stack.yaml`` or ``cabal.project``. |
 |``build``|No|``.stack-work`` when the ``TOOL`` is ``stack``, or ``dist-newstyle`` when the ``TOOL`` is  ``cabal``|Name of the directory made by the build tool.|
 |``verbose``|No|``true``|Show verbose output. |
@@ -68,7 +70,7 @@ Outputs
 
 | Name | Description |
 |------|-------------|
-|``exe``|Path of hpc-codecov executable.|
+|``exe``|Path of ``hpc-codecov`` executable.|
 |``report``|Path of generated coverage report file.|
 
 

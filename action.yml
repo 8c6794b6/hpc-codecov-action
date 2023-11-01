@@ -41,7 +41,7 @@ inputs:
 
   format:
     description: |
-      Format of the output report, ``codecov`` or ``lcov``.
+      Format of the output report, ``codecov``, ``lcov``, or ``cobertura``.
     default: "codecov"
 
   out:
