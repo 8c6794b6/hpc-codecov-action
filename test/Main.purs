@@ -101,6 +101,13 @@ spec = beforeAll_ rmExeIfExist do
                  , out = "codecov-cabal.lcov"
                  , root = root}
 
+  describe "Generate report for project1 with cabal-install, cobertura" do
+    report cabalBuild "project1" $ \root ->
+      base_input { target = "cabal:project1-test"
+                 , format = Cobertura
+                 , out = "codecov-cabal.xml"
+                 , root = root}
+
   describe "Generate report for project1 with cabal-install, default out" do
     report cabalBuild "project1" $ \root ->
       base_input { target = "cabal:project1-test"

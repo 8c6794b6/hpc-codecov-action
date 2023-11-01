@@ -139,11 +139,12 @@ type Outputs =
   }
 
 -- | Purescript representation of supported output report format.
-data Format = Codecov | Lcov
+data Format = Codecov | Lcov | Cobertura
 
 instance Show Format where
   show Codecov = "codecov"
   show Lcov = "lcov"
+  show Cobertura = "cobertura"
 
 -- | Get github action inputs specified in `action.yml`.
 getInputs :: Action Inputs
@@ -181,6 +182,7 @@ getFormat = do
   case str of
     "codecov" -> pure Codecov
     "lcov" -> pure Lcov
+    "cobertura" -> pure Cobertura
     _ -> do
       liftEffect $ Core.error $
         "expecting 'codecov' or 'lcov' for input 'format', but got " <> show str
@@ -189,9 +191,10 @@ getFormat = do
 defaultOutOnEmpty :: Format -> String -> String
 defaultOutOnEmpty format str =
   case format, str of
-    Codecov, "" -> "codecov.json"
-    Lcov, ""    -> "lcov.info"
-    _, _        -> str
+    Codecov, ""   -> "codecov.json"
+    Lcov, ""      -> "lcov.info"
+    Cobertura, "" -> "coverage.xml"
+    _, _          -> str
 
 optionalInput :: String -> ExceptT Error Effect String
 optionalInput n = Core.getInput {name: n, options: Nothing}
@@ -224,7 +227,7 @@ type HpcCodecovMeta =
 -- | Make a URL to download `hpc-codecov`.
 mkURL :: String -> String
 mkURL name =
-  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.4.1.0/"
+  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.5.0.0/"
   <> name
 
 -- | Get meta information to download `hpc-codecov` executable for
