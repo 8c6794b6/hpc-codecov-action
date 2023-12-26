@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "c8": "^8.0.1",
-    "purescript": "^0.15.12",
+    "purescript": "^0.15.13",
     "spago": "^0.21.0",
     "esbuild": "^0.19.10"
   }
