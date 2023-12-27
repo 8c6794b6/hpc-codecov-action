@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](#)
 
+## [v3.0.0] - 2023-11-02
+
 ### Added
 
 - ``format`` input parameter to specify the report output format
