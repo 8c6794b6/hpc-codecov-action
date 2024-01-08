@@ -16,7 +16,7 @@
     "@actions/exec": "^1.1.1"
   },
   "devDependencies": {
-    "c8": "^8.0.1",
+    "c8": "^9.0.0",
     "purescript": "^0.15.13",
     "spago": "^0.21.0",
     "esbuild": "^0.19.10"
