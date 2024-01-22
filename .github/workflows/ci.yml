@@ -35,21 +35,21 @@ jobs:
 
       - name: Cache directory for stack (ubuntu-latest)
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.stack/
           key: ${{ runner.os }}-stack-${{ env.cache-version }}
 
       - name: Cache directory for stack (windows-latest)
         if: matrix.os == 'windows-latest'
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: C:\Users\runneradmin\AppData\Local\Programs\stack\
           key: ${{ runner.os }}-stack-${{ env.cache-version }}
 
       - name: Cache more directories for stack under windows
         if: matrix.os == 'windows-latest'
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: C:\Users\runneradmin\AppData\Roaming\stack\
           key: ${{ runner.os }}-stack-win-extra-${{ env.cache-version }}
