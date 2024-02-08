@@ -77,7 +77,7 @@ jobs:
         run: npm run coverage
 
       - name: Send coverage report
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
 
       - name: Generate coverage report of project1 with stack
         uses: ./
