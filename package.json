@@ -4,12 +4,11 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "spago build -u \"-g sourcemaps\"",
-    "bundle": "node js/bundle.js",
+    "build": "spago build --backend-args \"-g sourcemaps\"",
+    "bundle": "spago bundle --platform=node --source-maps --minify --outfile=dist/main.mjs",
     "clean": "rm -rf output dist coverage",
     "coverage": "c8 spago test",
-    "test": "spago test",
-    "watch": "spago build -x -u '-g sourcemaps' --watch"
+    "test": "spago test"
   },
   "dependencies": {
     "@actions/core": "^1.10.1",
@@ -17,8 +16,8 @@
   },
   "devDependencies": {
     "c8": "^9.1.0",
+    "esbuild": "^0.20.0",
     "purescript": "^0.15.15",
-    "spago": "^0.21.0",
-    "esbuild": "^0.20.0"
+    "spago": "^0.93.24"
   }
 }
