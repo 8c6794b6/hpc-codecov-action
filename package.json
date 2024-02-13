@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "spago build --backend-args \"-g sourcemaps\"",
+    "build": "spago build --backend-args \"-g sourcemaps\" --verbose",
     "bundle": "spago bundle --platform=node --source-maps --minify --outfile=dist/main.mjs",
     "clean": "rm -rf output dist coverage",
     "coverage": "c8 spago test",
