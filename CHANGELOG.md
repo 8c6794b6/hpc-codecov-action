@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](#)
 
+## [v4.0.0] - 2024-04-26
+
+[v4.0.0]: https://github.com/8c6794b6/hpc-codecov-action/releases/tag/v4.0.0
+
 ### Added
 
 - ``expr_only`` input parameter to generate report from expressions
