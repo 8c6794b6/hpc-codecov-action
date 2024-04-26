@@ -67,6 +67,18 @@ inputs:
     # cabal, filled in the PureScript code
     default: ""
 
+  expr_only:
+    description: |
+      Count expressions only.
+    required: false
+    default: "false"
+
+  ignore_dittos:
+    description: |
+      Ignore consecutive entries with the same source code positions.
+    required: false
+    default: "false"
+
   verbose:
     description: |
       Show verbose output.
