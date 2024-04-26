@@ -85,6 +85,8 @@ spec = beforeAll_ rmExeIfExist do
         , out: ""
         , root: ""
         , build: ""
+        , expr_only: false
+        , ignore_dittos: false
         , verbose: true
         }
 
@@ -92,6 +94,8 @@ spec = beforeAll_ rmExeIfExist do
     report stackBuild "project1" $ \root ->
       base_input { target = "stack:project1-test"
                  , out = "codecov-stack.json"
+                 , expr_only = true
+                 , ignore_dittos = true
                  , root = root }
 
   describe "Generate report for project1 with cabal-install" do
@@ -142,6 +146,8 @@ withInputs inputs act = bracket acquire release (\_ -> act)
       , p "root" inputs.root
       , p "build" inputs.build
       , p "skip" inputs.skip
+      , p "expr_only" (show inputs.expr_only)
+      , p "ignore_dittos" (show inputs.ignore_dittos)
       ]
 
     p k v = {k:k, v:v}

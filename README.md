@@ -62,6 +62,8 @@ Inputs
 |``out``|No|``./codecov.json`` when the ``format`` is ``codecov``, ``./lcov.info`` when the ``format`` is ``lcov``, or ``./coverage.xml`` when the ``format`` is ``cobertura``|Output path to write the report.|
 |``root``|No|``./``|Project root directory, usually the directory containing ``stack.yaml`` or ``cabal.project``. |
 |``build``|No|``.stack-work`` when the ``TOOL`` is ``stack``, or ``dist-newstyle`` when the ``TOOL`` is  ``cabal``|Name of the directory made by the build tool.|
+|``expr_only``|No|``false``|Count expressions only.|
+|``ignore_dittos``|No|``false``|Ignore consecutive entries with the same source code positions.|
 |``verbose``|No|``true``|Show verbose output. |
 
 

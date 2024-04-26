@@ -128,6 +128,8 @@ type Inputs =
   , root :: String
   , build :: String
   , skip :: String
+  , expr_only :: Boolean
+  , ignore_dittos :: Boolean
   , verbose :: Boolean
   }
 
@@ -157,24 +159,15 @@ getInputs = liftEffect (runExceptT go) >>= except
       excludes <- optionalInput "excludes"
       format <- getFormat
       out <- defaultOutOnEmpty format <$> optionalInput "out"
-      verbose <- getVerbose
+      expr_only <- optionalBool "expr_only" false
+      ignore_dittos <- optionalBool "ignore_dittos" false
+      verbose <- optionalBool "verbose" true
       root <- optionalInput "root"
       build <- optionalInput "build"
       skip <- optionalInput "skip"
 
-      pure {target, mix, src, excludes, out, format, verbose, root, build, skip}
-
-getVerbose :: ExceptT Error Effect Boolean
-getVerbose = do
-  str <- optionalInput "verbose"
-  case str of
-    "true"  -> pure true
-    "false" -> pure false
-    _       -> do
-      liftEffect $ Core.warning $
-        "expecting 'true' or 'false' for input 'verbose', but got " <>
-        show str <> ", setting verbosity to 'true'."
-      pure true
+      pure {target, mix, src, excludes, out, format, verbose, root, build, skip
+           ,expr_only, ignore_dittos}
 
 getFormat :: ExceptT Error Effect Format
 getFormat = do
@@ -195,6 +188,18 @@ defaultOutOnEmpty format str =
     Lcov, ""      -> "lcov.info"
     Cobertura, "" -> "coverage.xml"
     _, _          -> str
+
+optionalBool :: String -> Boolean -> ExceptT Error Effect Boolean
+optionalBool name fallback = do
+  str <- optionalInput name
+  case str of
+    "true" -> pure true
+    "false" -> pure false
+    _ -> do
+      liftEffect $ Core.warning $
+        "Expecting 'true' or 'false' for input '" <> name <> "', but got " <>
+        show str <> ", setting " <> name <> " to '" <> show fallback <> "'."
+      pure fallback
 
 optionalInput :: String -> ExceptT Error Effect String
 optionalInput n = Core.getInput {name: n, options: Nothing}
@@ -227,7 +232,7 @@ type HpcCodecovMeta =
 -- | Make a URL to download `hpc-codecov`.
 mkURL :: String -> String
 mkURL name =
-  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.5.0.0/"
+  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.6.0.0/"
   <> name
 
 -- | Get meta information to download `hpc-codecov` executable for
@@ -269,19 +274,22 @@ getHpcCodecov meta = do
 
 getHpcCodecovArgs :: Inputs -> Action (Array String)
 getHpcCodecovArgs inputs = do
-  let f opt str = if str == "" then [] else [opt, str]
+  let optArg opt str = if str == "" then [] else [opt, str]
+      optFlag str flag = if flag then [str] else []
   root_resolved <- liftEffect $ resolve [] inputs.root
   pure $
     [ inputs.target ] <>
-    f "--mix" inputs.mix <>
-    f "--src" inputs.src <>
-    f "--exclude" inputs.excludes <>
-    f "--out" inputs.out <>
-    f "--format" (show inputs.format) <>
-    f "--root" root_resolved <>
-    f "--build" inputs.build <>
-    f "--skip" inputs.skip <>
-    if inputs.verbose then ["--verbose"] else []
+    optArg "--mix" inputs.mix <>
+    optArg "--src" inputs.src <>
+    optArg "--exclude" inputs.excludes <>
+    optArg "--out" inputs.out <>
+    optArg "--format" (show inputs.format) <>
+    optArg "--root" root_resolved <>
+    optArg "--build" inputs.build <>
+    optArg "--skip" inputs.skip <>
+    optFlag "--expr-only" inputs.expr_only <>
+    optFlag "--ignore-dittos" inputs.ignore_dittos <>
+    optFlag "--verbose" inputs.verbose
 
 
 -- ------------------------------------------------------------------------
