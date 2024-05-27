@@ -14,8 +14,24 @@ defaults:
     shell: bash
 
 jobs:
+  pre_job:
+    runs-on: ubuntu-latest
+    outputs:
+      run_it: >-
+        ${{
+        steps.skip_check.outputs.should_skip != 'true' ||
+        github.ref_name == github.event.repository.default_branch
+        }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          concurrent_skipping: same_content_newer
+
   run-self:
     name: Build, test, and run self
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.run_it == 'true' }}
     strategy:
       matrix:
         os:
@@ -29,30 +45,36 @@ jobs:
         with:
           fetch-depth: 1
 
-        # XXX: Caching stack directories for macos-latest is disabled
-        # at the moment, executable installed under cache directory
-        # not working well ...
+      - name: Cache stack related directories
+        uses: 8c6794b6/playing-with-github/.github/actions/setup-stack-cache@main
+        with:
+          cache-key:
+            ${{ hashFiles('hs/project1/stack.yaml') }}-${{ env.cache-version }}
 
-      - name: Cache directory for stack (ubuntu-latest)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Cache ghc under macOS
+        if: runner.os == 'macos'
         uses: actions/cache@v4
         with:
-          path: ~/.stack/
-          key: ${{ runner.os }}-stack-${{ env.cache-version }}
+          path: ~/.ghcup
+          key: ghcup-${{ runner.os }}-${{ env.cache-version }}
 
-      - name: Cache directory for stack (windows-latest)
-        if: matrix.os == 'windows-latest'
-        uses: actions/cache@v4
+      - name: Setup haskell
+        id: setup-hs
+        uses: haskell-actions/setup@v2
         with:
-          path: C:\Users\runneradmin\AppData\Local\Programs\stack\
-          key: ${{ runner.os }}-stack-${{ env.cache-version }}
+          enable-stack: true
+          cabal-update: true
 
-      - name: Cache more directories for stack under windows
-        if: matrix.os == 'windows-latest'
-        uses: actions/cache@v4
-        with:
-          path: C:\Users\runneradmin\AppData\Roaming\stack\
-          key: ${{ runner.os }}-stack-win-extra-${{ env.cache-version }}
+      - name: Show outputs from haskell-actions/setup
+        run: |
+          echo cabal-store: ${{ steps.setup-hs.outputs.cabal-store }}
+          echo stack-root: ${{ steps.setup-hs.outputs.stack-root }}
+
+      - name: Show stack, cabal, and ghc versions
+        run: |
+          which stack && stack --version
+          which cabal && cabal --version
+          which ghc && ghc --version
 
       # Building the sample projects before running "npm test", to
       # avoid timeout.
@@ -64,7 +86,32 @@ jobs:
 
       - name: Build and test sample project with cabal-install
         run: |
-          ( cd hs/project1 && cabal test --enable-coverage )
+          ( cd hs/project1 && cabal update && cabal test --enable-coverage )
+
+      # The 'spawn' function in node 20.12.2 not working well under
+      # windows, see:
+      #
+      #   https://github.com/nodejs/node/issues/52554
+
+      - name: Get node version
+        id: nv
+        run: |
+          case ${{ runner.os }} in
+            "Windows")
+              echo "node-version=20.12.1" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "node-version=20" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.nv.outputs.node-version }}
+
+      - name: Show node version
+        run: node --version
 
       - name: Build with npm
         run: |
