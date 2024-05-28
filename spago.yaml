@@ -1,4 +1,5 @@
 package:
+  name: hpc-codecov-action
   dependencies:
   - aff
   - control
@@ -17,8 +18,7 @@ package:
   - spec
   - strings
   - transformers
-  name: hpc-codecov-action
 workspace:
-  extra_packages: {}
-  package_set:
+  packageSet:
     registry: 29.1.0
+  extraPackages: {}
