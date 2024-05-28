@@ -65,20 +65,14 @@ jobs:
           enable-stack: true
           cabal-update: true
 
-      - name: Show outputs from haskell-actions/setup
-        run: |
-          echo cabal-store: ${{ steps.setup-hs.outputs.cabal-store }}
-          echo stack-root: ${{ steps.setup-hs.outputs.stack-root }}
-
       - name: Show stack, cabal, and ghc versions
         run: |
           which stack && stack --version
           which cabal && cabal --version
           which ghc && ghc --version
 
-      # Building the sample projects before running "npm test", to
-      # avoid timeout.
-
+      # Building the sample projects with stack and cabal-install
+      # before running "npm test", to avoid timeout.
       - name: Build and test sample project with stack
         run: |
           stack --stack-yaml=hs/project1/stack.yaml --skip-msys \
@@ -89,10 +83,7 @@ jobs:
           ( cd hs/project1 && cabal update && cabal test --enable-coverage )
 
       # The 'spawn' function in node 20.12.2 not working well under
-      # windows, see:
-      #
-      #   https://github.com/nodejs/node/issues/52554
-
+      # windows, see: https://github.com/nodejs/node/issues/52554
       - name: Get node version
         id: nv
         run: |
@@ -136,11 +127,6 @@ jobs:
           root: hs/project1
           out: p1-stack.json
 
-      - name: Show outputs of p1-stack
-        run: |
-          echo "outputs.exe: ${{ steps.p1-stack.outputs.exe }}"
-          echo "outputs.report: ${{ steps.p1-stack.outputs.report }}"
-
       - name: Generate coverage report of project1 with cabal
         uses: ./
         id: p1-cabal
@@ -149,11 +135,6 @@ jobs:
           root: hs/project1
           excludes: Main,Paths_project1
           out: p1-cabal.json
-
-      - name: Show outputs of p1-cabal
-        run: |
-          echo "outputs.exe: ${{ steps.p1-cabal.outputs.exe }}"
-          echo "outputs.report: ${{ steps.p1-cabal.outputs.report }}"
 
       - name: Generate coverage report of project1 with cabal in lcov format
         uses: ./
@@ -164,11 +145,6 @@ jobs:
           excludes: Main,Paths_project1
           format: lcov
 
-      - name: Show outputs of p1-cabal-lcov
-        run: |
-          echo "outputs.exe: ${{ steps.p1-cabal-lcov.outputs.exe }}"
-          echo "outputs.report: ${{ steps.p1-cabal-lcov.outputs.report }}"
-
       - name: Generate coverage report of project1 with cabal in cobertura format
         uses: ./
         id: p1-cabal-cobertura
@@ -178,7 +154,13 @@ jobs:
           excludes: Main,Paths_project1
           format: cobertura
 
-      - name: Show outputs of p1-cabal-cobertura
+      - name: Show outputs of self action
         run: |
-          echo "outputs.exe: ${{ steps.p1-cabal-cobertura.outputs.exe }}"
-          echo "outputs.report: ${{ steps.p1-cabal-cobertura.outputs.report }}"
+          echo "p1-stack.exe: ${{ steps.p1-stack.outputs.exe }}"
+          echo "p1-stack.report: ${{ steps.p1-stack.outputs.report }}"
+          echo "p1-cabal.exe: ${{ steps.p1-cabal.outputs.exe }}"
+          echo "p1-cabal.report: ${{ steps.p1-cabal.outputs.report }}"
+          echo "p1-cabal-lcov.exe: ${{ steps.p1-cabal-lcov.outputs.exe }}"
+          echo "p1-cabal-lcov.report: ${{ steps.p1-cabal-lcov.outputs.report }}"
+          echo "p1-cabal-cobertura.exe: ${{ steps.p1-cabal-cobertura.outputs.exe }}"
+          echo "p1-cabal-cobertura.report: ${{ steps.p1-cabal-cobertura.outputs.report }}"
