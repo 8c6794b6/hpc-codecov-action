@@ -51,13 +51,6 @@ jobs:
           cache-key:
             ${{ hashFiles('hs/project1/stack.yaml') }}-${{ env.cache-version }}
 
-      - name: Cache ghc under macOS
-        if: runner.os == 'macos'
-        uses: actions/cache@v4
-        with:
-          path: ~/.ghcup
-          key: ghcup-${{ runner.os }}-${{ env.cache-version }}
-
       - name: Setup haskell
         id: setup-hs
         uses: haskell-actions/setup@v2
