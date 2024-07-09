@@ -1,10 +1,8 @@
-cabal-version: 1.12
+cabal-version: 2.0
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 92bd0f800d6354793fb282c1a621a4803ba2801bab37f7efab870b8e1acf24b1
 
 name:           project1
 version:        0.1.0.0
@@ -28,6 +26,9 @@ source-repository head
 library
   exposed-modules:
       Lib
+  other-modules:
+      Paths_project1
+  autogen-modules:
       Paths_project1
   hs-source-dirs:
       src
@@ -37,8 +38,6 @@ library
 
 executable project1-exe
   main-is: Main.hs
-  other-modules:
-      Paths_project1
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -50,8 +49,6 @@ executable project1-exe
 test-suite project1-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
-  other-modules:
-      Paths_project1
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N

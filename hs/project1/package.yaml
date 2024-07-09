@@ -1,3 +1,4 @@
+spec-version:        0.36.0
 name:                project1
 version:             0.1.0.0
 github:              "githubuser/project1"
@@ -26,6 +27,8 @@ library:
   source-dirs: src
   exposed-modules:
     - Lib
+    # - Paths_project1
+  generated-other-modules:
     - Paths_project1
 
 executables:
