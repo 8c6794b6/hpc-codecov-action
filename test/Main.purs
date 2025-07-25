@@ -156,14 +156,18 @@ withInputs inputs act = bracket acquire release (\_ -> act)
     github_key name = "INPUT_" <> toUpper name
 
 stackBuild :: String -> Aff Unit
-stackBuild = buildProject "stack"
+stackBuild project = do
+  runInProject project "stack" ["clean", "--full"]
+  runInProject project "stack"
                ["--skip-msys", "build", "--fast", "--test", "--coverage"]
 
 cabalBuild :: String -> Aff Unit
-cabalBuild = buildProject "cabal" ["test", "--enable-coverage"]
+cabalBuild project = do
+  runInProject project "cabal" ["clean"]
+  runInProject project "cabal" ["test", "--enable-coverage"]
 
-buildProject :: String -> Array String -> String -> Aff Unit
-buildProject build_cmd build_args project_name = do
+runInProject :: String -> String -> Array String -> Aff Unit
+runInProject project_name build_cmd build_args = do
   et_ec <- runExceptT do
     project_root <- liftEffect (resolve ["hs"] project_name)
     let options = defaultExecOptions {cwd = Just project_root}
