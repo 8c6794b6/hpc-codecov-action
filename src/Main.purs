@@ -38,9 +38,9 @@ import Node.Process (platform)
 -- transformers
 import Control.Monad.Except (ExceptT, except, runExceptT, throwError, lift)
 
--- github-actions-toolkit
-import GitHub.Actions.Core as Core
-import GitHub.Actions.Exec as Exec
+-- Local modules from github-actions-toolkit
+import GHAT.Core as Core
+import GHAT.Exec as Exec
 
 
 -- ------------------------------------------------------------------------
