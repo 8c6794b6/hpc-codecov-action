@@ -7,7 +7,7 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 
 -- aff
-import Effect.Aff (Aff, launchAff_, bracket)
+import Effect.Aff (Aff, bracket)
 
 -- control
 import Control.Alt ((<|>))
@@ -23,9 +23,6 @@ import Effect.Exception (error)
 
 -- foldable-traversable
 import Data.Traversable (traverse_)
-
--- github-actions-toolkit
-import GitHub.Actions.Exec (exec, defaultExecOptions)
 
 -- maybe
 import Data.Maybe (Maybe(..))
@@ -46,7 +43,10 @@ import Node.Process (setEnv, unsetEnv)
 import Test.Spec (SpecT, before_, beforeAll_, describe, it)
 import Test.Spec.Assertions (shouldSatisfy)
 import Test.Spec.Reporter.Console (consoleReporter)
-import Test.Spec.Runner (Config, runSpecT, defaultConfig)
+
+-- spec-node
+import Test.Spec.Runner.Node (runSpecAndExitProcess')
+import Test.Spec.Runner.Node.Config (TestRunConfig, defaultConfig)
 
 -- strings
 import Data.String (toUpper)
@@ -58,10 +58,13 @@ import Control.Monad.Except (runExceptT, throwError)
 import Main ( Inputs, Format(..), getHpcCodecovMeta, mainAff, runAction
             , defaultOutOnEmpty )
 
+-- Local modules from github-actions-toolkit
+import GHAT.Exec (exec, defaultExecOptions)
+
 main :: Effect Unit
 main = do
-  aff <- runSpecT myConfig [consoleReporter] spec
-  launchAff_ (void aff)
+  let config = { defaultConfig: myConfig, parseCLIOptions: false }
+  runSpecAndExitProcess' config [consoleReporter] spec
 
 spec :: SpecT Aff Unit Effect Unit
 spec = beforeAll_ rmExeIfExist do
@@ -118,7 +121,7 @@ spec = beforeAll_ rmExeIfExist do
                  , format = Lcov
                  , root = root }
 
-myConfig :: Config
+myConfig :: TestRunConfig
 myConfig = defaultConfig {timeout = Just (Milliseconds 60000.0)}
 
 rmExeIfExist :: Aff Unit

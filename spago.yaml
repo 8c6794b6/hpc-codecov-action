@@ -2,23 +2,23 @@ package:
   name: hpc-codecov-action
   dependencies:
   - aff
+  - aff-promise
   - control
   - datetime
   - effect
   - either
   - exceptions
   - foldable-traversable
-  - github-actions-toolkit
   - maybe
   - node-fs
-  - node-fs-aff
   - node-path
   - node-process
   - prelude
   - spec
+  - spec-node
   - strings
   - transformers
 workspace:
   packageSet:
-    registry: 29.1.0
+    registry: 66.1.0
   extraPackages: {}
