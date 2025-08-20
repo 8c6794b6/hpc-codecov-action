@@ -11,6 +11,7 @@ package:
   - foldable-traversable
   - maybe
   - node-fs
+  - node-os
   - node-path
   - node-process
   - prelude

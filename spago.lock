@@ -15,6 +15,7 @@
             "foldable-traversable",
             "maybe",
             "node-fs",
+            "node-os",
             "node-path",
             "node-process",
             "prelude",
@@ -66,6 +67,7 @@
             "node-buffer",
             "node-event-emitter",
             "node-fs",
+            "node-os",
             "node-path",
             "node-process",
             "node-streams",
@@ -1216,6 +1218,32 @@
         "partial",
         "prelude",
         "strings",
+        "unsafe-coerce"
+      ]
+    },
+    "node-os": {
+      "type": "registry",
+      "version": "5.1.0",
+      "integrity": "sha256-K3gcu9AXanN1+qtk1900+Fi+CuO0s3/H/RMNRNgIzso=",
+      "dependencies": [
+        "arrays",
+        "bifunctors",
+        "console",
+        "control",
+        "datetime",
+        "effect",
+        "either",
+        "exceptions",
+        "foldable-traversable",
+        "foreign",
+        "foreign-object",
+        "functions",
+        "maybe",
+        "node-buffer",
+        "nullable",
+        "partial",
+        "posix-types",
+        "prelude",
         "unsafe-coerce"
       ]
     },

@@ -28,6 +28,9 @@ import Node.FS.Constants (x_OK)
 -- node-fs-aff
 import Node.FS.Aff (access', chmod)
 
+-- node-os
+import Node.OS (Arch(..), arch)
+
 -- node-path
 import Node.Path (resolve)
 
@@ -232,7 +235,7 @@ type HpcCodecovMeta =
 -- | Make a URL to download `hpc-codecov`.
 mkURL :: String -> String
 mkURL name =
-  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.6.3.0/"
+  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.6.3.1/"
   <> name
 
 -- | Get meta information to download `hpc-codecov` executable for
@@ -240,15 +243,19 @@ mkURL name =
 -- | platforms, e.g. AIX, Android ... etc.
 getHpcCodecovMeta :: Action HpcCodecovMeta
 getHpcCodecovMeta = do
-  case platform of
-    Just Linux ->
-      pure {url: mkURL "hpc-codecov-Linux", exe: "hpc-codecov"}
-    Just Darwin ->
-      pure {url: mkURL "hpc-codecov-macOS", exe: "hpc-codecov"}
-    Just Win32 ->
-      pure {url: mkURL "hpc-codecov-Windows.exe", exe: "hpc-codecov.exe"}
-    _ ->
-      throwError $ error $ "Unsupported platform: " <> show platform
+  this_arch <- liftEffect arch
+  case platform, this_arch of
+    Just Linux, X64 ->
+      pure {url: mkURL "hpc-codecov-Linux-X64", exe: "hpc-codecov"}
+    Just Linux, Arm64 ->
+      pure {url: mkURL "hpc-codecov-Linux-ARM64", exe: "hpc-codecov"}
+    Just Darwin, Arm64 ->
+      pure {url: mkURL "hpc-codecov-macOS-ARM64", exe: "hpc-codecov"}
+    Just Win32, X64 ->
+      pure {url: mkURL "hpc-codecov-Windows-X64.exe", exe: "hpc-codecov.exe"}
+    _, _ ->
+      throwError $ error $ "Unsupported platform/arch: " <>
+        show platform <> "/" <> show this_arch
 
 -- | Download `hpc-codecov` executable. Internally uses `curl` to
 -- | simplify following redirect of the download URL.  Returns the
