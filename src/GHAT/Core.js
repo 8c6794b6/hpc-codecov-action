@@ -1,4 +1,4 @@
-import core from "@actions/core";
+import * as core from "@actions/core";
 export const exportVariableImpl = core.exportVariable;
 export const setSecretImpl = core.setSecret;
 export const addPathImpl = core.addPath;
