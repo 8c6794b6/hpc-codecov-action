@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](#)
 
+### Changed
+
+- Update the ``hpc-codecov`` version to 0.6.4.0.
+- Update the node version to run the action to ``node24``.
+- Update the package dependencies from npm.
+
+## [v4.2.0] - 2025-08-20
+
+### Changed
+
+- Update the ``hpc-codecov`` version to 0.6.3.0.
+
 ## [v4.1.0] - 2024-07-09
 
 [v4.1.0]: https://github.com/8c6794b6/hpc-codecov-action/releases/tag/v4.1.0
