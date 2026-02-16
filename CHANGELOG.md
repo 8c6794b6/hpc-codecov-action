@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](#)
+## [v4.3.0] - 2026-02-16
+
+[v4.3.0]: https://github.com/8c6794b6/hpc-codecov-action/releases/tag/v4.3.0
 
 ### Changed
 
