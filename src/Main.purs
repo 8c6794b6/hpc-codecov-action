@@ -235,7 +235,7 @@ type HpcCodecovMeta =
 -- | Make a URL to download `hpc-codecov`.
 mkURL :: String -> String
 mkURL name =
-  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.6.3.1/"
+  "https://github.com/8c6794b6/hpc-codecov/releases/download/v0.6.4.0/"
   <> name
 
 -- | Get meta information to download `hpc-codecov` executable for
