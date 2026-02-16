@@ -76,37 +76,38 @@ jobs:
         run: |
           ( cd hs/project1 && cabal update && cabal test --enable-coverage )
 
-      # The 'spawn' function in node 20.12.2 not working well under
-      # windows, see: https://github.com/nodejs/node/issues/52554
-      - name: Get node version
-        id: nv
-        run: |
-          case ${{ runner.os }} in
-            "Windows")
-              echo "node-version=20.12.1" >> $GITHUB_OUTPUT
-              ;;
-            *)
-              echo "node-version=20" >> $GITHUB_OUTPUT
-              ;;
-          esac
-
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ steps.nv.outputs.node-version }}
+          node-version: 24
 
       - name: Show node version
         run: node --version
 
-      - name: Build with npm
+      # The use of 'spawn' under Windows is not working well.
+      # Separating build and test step for Windows to run with
+      # 'pwsh'. See:
+      #
+      #   https://nodejs.org/en/blog/vulnerability/april-2024-security-releases-2
+      #
+      - name: Build and test with npm (non Windows)
+        if: runner.os != 'Windows'
         run: |
           npm install
           npm run clean
           npm run build
           npm run bundle
+          npm run coverage
 
-      - name: Run tests with coverage
-        run: npm run coverage
+      - name: Build and test with npm (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          npm install
+          npm run clean
+          npm run build
+          npm run bundle
+          npm run coverage
 
       - name: Send coverage report
         uses: codecov/codecov-action@v5
