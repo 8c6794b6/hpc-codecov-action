@@ -50,7 +50,7 @@ jobs:
         uses: 8c6794b6/playing-with-github/.github/actions/setup-stack-cache@main
         with:
           cache-key:
-            ${{ hashFiles('hs/project1/stack.yaml') }}-${{ env.cache-version }}
+            ${{ hashFiles('hs/project1/stack.yaml') }}-${{ matrix.os }}-${{ env.cache-version }}
 
       - name: Setup haskell
         id: setup-hs
