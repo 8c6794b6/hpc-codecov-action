@@ -54,7 +54,7 @@ jobs:
 
       - name: Setup haskell
         id: setup-hs
-        uses: haskell-actions/setup@v2
+        uses: haskell-actions/setup@v2.11.0
         with:
           enable-stack: true
           cabal-update: true
